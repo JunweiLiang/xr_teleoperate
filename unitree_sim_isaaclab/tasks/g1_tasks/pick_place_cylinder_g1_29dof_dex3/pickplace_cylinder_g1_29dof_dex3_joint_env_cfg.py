@@ -69,12 +69,12 @@ class ObservationsCfg:
         """
 
         # 1. robot joint state observation
-        robot_joint_state = ObsTerm(func=mdp.get_robot_boy_joint_states)
+        #robot_joint_state = ObsTerm(func=mdp.get_robot_boy_joint_states)
         # 2. gripper joint state observation 
-        robot_gipper_state = ObsTerm(func=mdp.get_robot_dex3_joint_states)
+        #robot_gipper_state = ObsTerm(func=mdp.get_robot_dex3_joint_states)
 
         # 3. camera image observation
-        camera_image = ObsTerm(func=mdp.get_camera_image)
+        #camera_image = ObsTerm(func=mdp.get_camera_image)
 
         def __post_init__(self):
             """post initialization function
