@@ -1,0 +1,133 @@
+2025-07-26 11:17:21,224 - evalscope - INFO - Starting benchmark with args: 
+2025-07-26 11:17:21,225 - evalscope - INFO - {
+    "model": "Qwen2.5-VL-32B-Instruct/",
+    "model_id": "",
+    "attn_implementation": null,
+    "api": "openai",
+    "tokenizer_path": null,
+    "port": 8877,
+    "url": "http://127.0.0.1:8888/v1/chat/completions",
+    "headers": {},
+    "connect_timeout": 600,
+    "read_timeout": 600,
+    "api_key": null,
+    "no_test_connection": false,
+    "number": 20,
+    "parallel": 10,
+    "rate": -1,
+    "log_every_n_query": 10,
+    "debug": false,
+    "wandb_api_key": null,
+    "swanlab_api_key": null,
+    "name": null,
+    "outputs_dir": "outputs/20250726_111721/",
+    "max_prompt_length": 9223372036854775807,
+    "min_prompt_length": 0,
+    "prefix_length": 0,
+    "prompt": null,
+    "query_template": null,
+    "apply_chat_template": true,
+    "dataset": "openqa",
+    "dataset_path": null,
+    "frequency_penalty": null,
+    "logprobs": null,
+    "max_tokens": 2048,
+    "min_tokens": null,
+    "n_choices": null,
+    "seed": 0,
+    "stop": null,
+    "stop_token_ids": null,
+    "stream": true,
+    "temperature": 0.0,
+    "top_p": null,
+    "top_k": null,
+    "extra_args": {}
+}
+2025-07-26 11:17:21,283 - evalscope - INFO - Test connection successful.
+2025-07-26 11:17:22,691 - evalscope - INFO - Save the data base to: outputs/20250726_111721/benchmark_data.db
+2025-07-26 11:17:57,101 - evalscope - INFO - {
+  "Time taken for tests (s)": 34.4048,
+  "Number of concurrency": 10,
+  "Total requests": 10,
+  "Succeed requests": 10,
+  "Failed requests": 0,
+  "Output token throughput (tok/s)": 209.8251,
+  "Total token throughput (tok/s)": 221.4223,
+  "Request throughput (req/s)": 0.2907,
+  "Average latency (s)": 22.1651,
+  "Average time to first token (s)": 0.1385,
+  "Average time per output token (s)": 0.0305,
+  "Average input tokens per request": 39.9,
+  "Average output tokens per request": 721.9,
+  "Average package latency (s)": 0.0305,
+  "Average package per request": 721.9
+}
+2025-07-26 11:18:41,847 - evalscope - INFO - {
+  "Time taken for tests (s)": 79.1503,
+  "Number of concurrency": 10,
+  "Total requests": 20,
+  "Succeed requests": 20,
+  "Failed requests": 0,
+  "Output token throughput (tok/s)": 204.5982,
+  "Total token throughput (tok/s)": 214.895,
+  "Request throughput (req/s)": 0.2527,
+  "Average latency (s)": 24.2622,
+  "Average time to first token (s)": 0.1049,
+  "Average time per output token (s)": 0.03,
+  "Average input tokens per request": 40.75,
+  "Average output tokens per request": 809.7,
+  "Average package latency (s)": 0.0298,
+  "Average package per request": 809.7
+}
+2025-07-26 11:18:41,987 - evalscope - INFO - 
+Benchmarking summary:
++-----------------------------------+----------+
+| Key                               |    Value |
++===================================+==========+
+| Time taken for tests (s)          |  79.1503 |
++-----------------------------------+----------+
+| Number of concurrency             |  10      |
++-----------------------------------+----------+
+| Total requests                    |  20      |
++-----------------------------------+----------+
+| Succeed requests                  |  20      |
++-----------------------------------+----------+
+| Failed requests                   |   0      |
++-----------------------------------+----------+
+| Output token throughput (tok/s)   | 204.598  |
++-----------------------------------+----------+
+| Total token throughput (tok/s)    | 214.895  |
++-----------------------------------+----------+
+| Request throughput (req/s)        |   0.2527 |
++-----------------------------------+----------+
+| Average latency (s)               |  24.2622 |
++-----------------------------------+----------+
+| Average time to first token (s)   |   0.1049 |
++-----------------------------------+----------+
+| Average time per output token (s) |   0.03   |
++-----------------------------------+----------+
+| Average input tokens per request  |  40.75   |
++-----------------------------------+----------+
+| Average output tokens per request | 809.7    |
++-----------------------------------+----------+
+| Average package latency (s)       |   0.0298 |
++-----------------------------------+----------+
+| Average package per request       | 809.7    |
++-----------------------------------+----------+
+2025-07-26 11:18:42,008 - evalscope - INFO - 
+Percentile results:
++-------------+----------+---------+----------+-------------+--------------+---------------+----------------+---------------+
+| Percentiles | TTFT (s) | ITL (s) | TPOT (s) | Latency (s) | Input tokens | Output tokens | Output (tok/s) | Total (tok/s) |
++-------------+----------+---------+----------+-------------+--------------+---------------+----------------+---------------+
+|     10%     |  0.0607  | 0.0275  |  0.0289  |   8.7346    |      33      |      300      |    32.5205     |    33.6876    |
+|     25%     |  0.0625  | 0.0288  |  0.0298  |   18.478    |      37      |      603      |    32.5363     |    34.3822    |
+|     50%     |  0.1059  | 0.0304  |  0.0305  |   23.4795   |      39      |      765      |    32.5872     |    34.9232    |
+|     66%     |  0.1507  | 0.0306  |  0.0305  |   30.3612   |      42      |     1028      |    32.8648     |    35.4726    |
+|     75%     |  0.1534  | 0.0307  |  0.0306  |   33.163    |      46      |     1079      |     33.859     |    36.6589    |
+|     80%     |  0.1535  | 0.0308  |  0.0306  |   34.4044   |      49      |     1119      |    34.3461     |    36.8214    |
+|     90%     |  0.1542  | 0.0311  |  0.0306  |   41.4971   |      52      |     1444      |    34.7976     |    43.6784    |
+|     95%     |  0.1546  | 0.0317  |  0.0307  |   57.4212   |      57      |     2048      |    35.6663     |    51.026     |
+|     98%     |  0.1546  | 0.0322  |  0.0307  |   57.4212   |      57      |     2048      |    35.6663     |    51.026     |
+|     99%     |  0.1546  | 0.0326  |  0.0307  |   57.4212   |      57      |     2048      |    35.6663     |    51.026     |
++-------------+----------+---------+----------+-------------+--------------+---------------+----------------+---------------+
+2025-07-26 11:18:42,008 - evalscope - INFO - Save the summary to: outputs/20250726_111721
