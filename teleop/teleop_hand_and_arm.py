@@ -235,12 +235,57 @@ if __name__ == '__main__':
                     if args.sim:
                         publish_reset_category(1, reset_pose_publisher)
             # get input data
+            """
+                teleop/televuer/src/televuer/tv_wrapper.py
+                hand_tracking:
+                    TeleData(
+                        head_pose=Brobot_world_head,
+                        left_arm_pose=left_IPunitree_Brobot_waist_arm,
+                        right_arm_pose=right_IPunitree_Brobot_waist_arm,
+                        left_hand_pos=left_IPunitree_Brobot_arm_hand_pos,
+                        right_hand_pos=right_IPunitree_Brobot_arm_hand_pos,
+                        left_hand_rot=left_Brobot_arm_hand_rot,
+                        right_hand_rot=right_Brobot_arm_hand_rot,
+                        left_pinch_value=self.tvuer.left_hand_pinch_value * 100.0,
+                        right_pinch_value=self.tvuer.right_hand_pinch_value * 100.0,
+                        tele_state=hand_state
+                    )
+                controller_tracking:
+                    controller_state = TeleStateData(
+                        left_trigger_state=self.tvuer.left_controller_trigger_state,
+                        left_squeeze_ctrl_state=self.tvuer.left_controller_squeeze_state,
+                        left_squeeze_ctrl_value=self.tvuer.left_controller_squeeze_value,
+                        left_thumbstick_state=self.tvuer.left_controller_thumbstick_state,
+                        left_thumbstick_value=self.tvuer.left_controller_thumbstick_value,
+                        left_aButton=self.tvuer.left_controller_aButton,
+                        left_bButton=self.tvuer.left_controller_bButton,
+                        right_trigger_state=self.tvuer.right_controller_trigger_state,
+                        right_squeeze_ctrl_state=self.tvuer.right_controller_squeeze_state,
+                        right_squeeze_ctrl_value=self.tvuer.right_controller_squeeze_value,
+                        right_thumbstick_state=self.tvuer.right_controller_thumbstick_state,
+                        right_thumbstick_value=self.tvuer.right_controller_thumbstick_value,
+                        right_aButton=self.tvuer.right_controller_aButton,
+                        right_bButton=self.tvuer.right_controller_bButton,
+                    )
+                    TeleData(
+                        head_pose=Brobot_world_head,
+                        left_arm_pose=left_IPunitree_Brobot_waist_arm,
+                        right_arm_pose=right_IPunitree_Brobot_waist_arm,
+                        left_trigger_value=10.0 - self.tvuer.left_controller_trigger_value * 10,
+                        right_trigger_value=10.0 - self.tvuer.right_controller_trigger_value * 10,
+                        tele_state=controller_state
+                    )
+            """
+            # 获得手姿态等数据
             tele_data = tv_wrapper.get_motion_state_data()
+
             if (args.ee == "dex3" or args.ee == "inspire1" or args.ee == "brainco") and args.xr_mode == "hand":
                 with left_hand_pos_array.get_lock():
                     left_hand_pos_array[:] = tele_data.left_hand_pos.flatten()
                 with right_hand_pos_array.get_lock():
                     right_hand_pos_array[:] = tele_data.right_hand_pos.flatten()
+
+            # TODO: use controller for dex3 and inspre1
             elif args.ee == "dex1" and args.xr_mode == "controller":
                 with left_gripper_value.get_lock():
                     left_gripper_value.value = tele_data.left_trigger_value
@@ -252,7 +297,9 @@ if __name__ == '__main__':
                 with right_gripper_value.get_lock():
                     right_gripper_value.value = tele_data.right_pinch_value
             else:
-                pass        
+                pass
+            # Inspire_Controller 以最高100 Hz，获取hand_pos_array，重定向出dual_hand_state_array
+            #
             
             # high level control
             if args.xr_mode == "controller" and args.motion:
@@ -273,7 +320,9 @@ if __name__ == '__main__':
             current_lr_arm_dq = arm_ctrl.get_current_dual_arm_dq()
 
             # solve ik using motor data and wrist pose, then use ik results to control arms.
+            # tele_data.left_arm_pose -> (4,4) SE(3) pose of left arm
             time_ik_start = time.time()
+            # left_arm_pose=left_IPunitree_Brobot_waist_arm, 以g1原点(waist)的wrist位置, 从OpenXR的left_arm_pose转化过来
             sol_q, sol_tauff  = arm_ik.solve_ik(tele_data.left_arm_pose, tele_data.right_arm_pose, current_lr_arm_q, current_lr_arm_dq)
             time_ik_end = time.time()
             logger_mp.debug(f"ik:\t{round(time_ik_end - time_ik_start, 6)}")

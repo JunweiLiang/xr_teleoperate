@@ -43,6 +43,7 @@ class G1_29_ArmIK:
                                         "waist_roll_joint" ,
                                         "waist_pitch_joint" ,
                                         
+                                        # 用的宇树三指手的URDF，每个7自由度，全部锁了
                                         "left_hand_thumb_0_joint" ,
                                         "left_hand_thumb_1_joint" ,
                                         "left_hand_thumb_2_joint" ,
@@ -69,7 +70,7 @@ class G1_29_ArmIK:
             pin.Frame('L_ee',
                       self.reduced_robot.model.getJointId('left_wrist_yaw_joint'),
                       pin.SE3(np.eye(3),
-                              np.array([0.05,0,0]).T),
+                              np.array([0.05,0,0]).T), # x=0.05，往机器人身前延伸5厘米
                       pin.FrameType.OP_FRAME)
         )
         

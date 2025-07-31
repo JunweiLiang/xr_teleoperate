@@ -37,13 +37,29 @@ class HandRetargeting:
             if 'left' not in self.cfg or 'right' not in self.cfg:
                 raise ValueError("Configuration file must contain 'left' and 'right' keys.")
 
+            # xr_teleoperate/assets/inspire_hand/inspire_hand.yml
             left_retargeting_config = RetargetingConfig.from_dict(self.cfg['left'])
             right_retargeting_config = RetargetingConfig.from_dict(self.cfg['right'])
+            # SeqRetargeting from teleop/robot_control/dex-retargeting/src/dex_retargeting/retargeting_config.py
+            # self.left_retargeting.retarget() -> return robot_qpos
             self.left_retargeting = left_retargeting_config.build()
             self.right_retargeting = right_retargeting_config.build()
 
+            """
+            # 来自 assets/inspire_hand/inspire_hand.xml
+            target_joint_names:
+            [
+             'L_thumb_proximal_yaw_joint',
+             'L_thumb_proximal_pitch_joint',
+             'L_index_proximal_joint',
+             'L_middle_proximal_joint',
+             'L_ring_proximal_joint',
+             'L_pinky_proximal_joint'
+            ]
+            """
             self.left_retargeting_joint_names = self.left_retargeting.joint_names
             self.right_retargeting_joint_names = self.right_retargeting.joint_names
+            # (2, 15)? # assets/inspire_hand/inspire_hand.xml -> target_link_human_indices_dexpilot
             self.left_indices = self.left_retargeting.optimizer.target_link_human_indices
             self.right_indices = self.right_retargeting.optimizer.target_link_human_indices
 
@@ -64,6 +80,7 @@ class HandRetargeting:
                                                        'L_index_proximal_joint', 'L_thumb_proximal_pitch_joint', 'L_thumb_proximal_yaw_joint' ]
                 self.right_inspire_api_joint_names = [ 'R_pinky_proximal_joint', 'R_ring_proximal_joint', 'R_middle_proximal_joint',
                                                        'R_index_proximal_joint', 'R_thumb_proximal_pitch_joint', 'R_thumb_proximal_yaw_joint' ]
+                # so we have [5, 4, 3, 2, 1, 0]
                 self.left_dex_retargeting_to_hardware = [ self.left_retargeting_joint_names.index(name) for name in self.left_inspire_api_joint_names]
                 self.right_dex_retargeting_to_hardware = [ self.right_retargeting_joint_names.index(name) for name in self.right_inspire_api_joint_names]
             

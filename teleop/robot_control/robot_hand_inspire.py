@@ -88,6 +88,7 @@ class Inspire_Controller:
     def control_process(self, left_hand_array, right_hand_array, left_hand_state_array, right_hand_state_array,
                               dual_hand_data_lock = None, dual_hand_state_array = None, dual_hand_action_array = None):
         self.running = True
+        # 这个遥操作一开始就在跑了，最高100 Hz检查left_hand_pos_array, 这个是从OpenXR获取到的手
 
         left_q_target  = np.full(Inspire_Num_Motors, 1.0)
         right_q_target = np.full(Inspire_Num_Motors, 1.0)
@@ -114,9 +115,14 @@ class Inspire_Controller:
                 state_data = np.concatenate((np.array(left_hand_state_array[:]), np.array(right_hand_state_array[:])))
 
                 if not np.all(right_hand_data == 0.0) and not np.all(left_hand_data[4] == np.array([-1.13, 0.3, 0.15])): # if hand data has been initialized.
+                    # # left_indices (2, 15)? # assets/inspire_hand/inspire_hand.xml -> target_link_human_indices_dexpilot
                     ref_left_value = left_hand_data[self.hand_retargeting.left_indices[1,:]] - left_hand_data[self.hand_retargeting.left_indices[0,:]]
                     ref_right_value = right_hand_data[self.hand_retargeting.right_indices[1,:]] - right_hand_data[self.hand_retargeting.right_indices[0,:]]
 
+                    # retarget() from teleop/robot_control/dex-retargeting/src/dex_retargeting/retargeting_config.py -> build(), also see seq_retarget.py
+                    # retarget() function的时候返回robot_qpos
+                    # self.hand_retargeting.left_dex_retargeting_to_hardware -> [5, 4, 3, 2, 1, 0]
+                    # 所以这个q_target，长度是6，顺序就是 self.left_inspire_api_joint_names from hand_retargeting.py
                     left_q_target  = self.hand_retargeting.left_retargeting.retarget(ref_left_value)[self.hand_retargeting.left_dex_retargeting_to_hardware]
                     right_q_target = self.hand_retargeting.right_retargeting.retarget(ref_right_value)[self.hand_retargeting.right_dex_retargeting_to_hardware]
 
