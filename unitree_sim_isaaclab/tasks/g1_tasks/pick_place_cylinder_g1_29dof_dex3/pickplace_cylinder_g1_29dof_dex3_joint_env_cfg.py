@@ -45,8 +45,8 @@ class ObjectTableSceneCfg(TableCylinderSceneCfg):
     front_camera = CameraPresets.g1_front_camera()
 
     # junwei: 不需要wrist camera
-    left_wrist_camera = CameraPresets.left_dex3_wrist_camera()
-    right_wrist_camera = CameraPresets.right_dex3_wrist_camera()
+    #left_wrist_camera = CameraPresets.left_dex3_wrist_camera()
+    #right_wrist_camera = CameraPresets.right_dex3_wrist_camera()
 
 ##
 # MDP settings
