@@ -102,6 +102,7 @@ if __name__ == '__main__':
         WRIST = True
     else:
         WRIST = False
+    WRIST = False
     
     if BINOCULAR and not (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
         tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1] * 2, 3)
