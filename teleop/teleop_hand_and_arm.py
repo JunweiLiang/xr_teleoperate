@@ -77,9 +77,9 @@ if __name__ == '__main__':
             'head_camera_type': 'opencv',
             'head_camera_image_shape': [480, 640],  # Head camera resolution
             'head_camera_id_numbers': [0],
-            #'wrist_camera_type': 'opencv',
-            #'wrist_camera_image_shape': [480, 640],  # Wrist camera resolution
-            #'wrist_camera_id_numbers': [2, 4],
+            'wrist_camera_type': 'opencv',
+            'wrist_camera_image_shape': [480, 640],  # Wrist camera resolution
+            'wrist_camera_id_numbers': [2, 4],
         }
     else:
         img_config = {
@@ -87,9 +87,9 @@ if __name__ == '__main__':
             'head_camera_type': 'opencv',
             'head_camera_image_shape': [480, 1280],  # Head camera resolution
             'head_camera_id_numbers': [0],
-            #'wrist_camera_type': 'opencv',
-            #'wrist_camera_image_shape': [480, 640],  # Wrist camera resolution
-            #'wrist_camera_id_numbers': [2, 4],
+            'wrist_camera_type': 'opencv',
+            'wrist_camera_image_shape': [480, 640],  # Wrist camera resolution
+            'wrist_camera_id_numbers': [2, 4],
         }
 
 
