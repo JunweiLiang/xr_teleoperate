@@ -102,7 +102,6 @@ if __name__ == '__main__':
         WRIST = True
     else:
         WRIST = False
-    WRIST = False
     
     if BINOCULAR and not (img_config['head_camera_image_shape'][1] / img_config['head_camera_image_shape'][0] > ASPECT_RATIO_THRESHOLD):
         tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1] * 2, 3)
@@ -211,6 +210,7 @@ if __name__ == '__main__':
 
             if not args.headless:
                 tv_resized_image = cv2.resize(tv_img_array, (tv_img_shape[1] // 2, tv_img_shape[0] // 2))
+                print(wrist_img_array.shape)
                 cv2.imshow("record image", tv_resized_image)
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):
