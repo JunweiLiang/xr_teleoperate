@@ -383,7 +383,7 @@ class TeleVuerWrapper:
             if self.return_state_data:
                 controller_state = TeleStateData(
                     left_trigger_state=self.tvuer.left_controller_trigger_state,
-                    #left_trigger_value=self.tvuer.left_controller_trigger_value,
+                    left_trigger_value=self.tvuer.left_controller_trigger_value,
                     left_squeeze_ctrl_state=self.tvuer.left_controller_squeeze_state,
                     left_squeeze_ctrl_value=self.tvuer.left_controller_squeeze_value,
                     left_thumbstick_state=self.tvuer.left_controller_thumbstick_state,
@@ -391,7 +391,7 @@ class TeleVuerWrapper:
                     left_aButton=self.tvuer.left_controller_aButton,
                     left_bButton=self.tvuer.left_controller_bButton,
                     right_trigger_state=self.tvuer.right_controller_trigger_state,
-                    #right_trigger_value=self.tvuer.right_controller_trigger_value,
+                    right_trigger_value=self.tvuer.right_controller_trigger_value,
                     right_squeeze_ctrl_state=self.tvuer.right_controller_squeeze_state,
                     right_squeeze_ctrl_value=self.tvuer.right_controller_squeeze_value,
                     right_thumbstick_state=self.tvuer.right_controller_thumbstick_state,
