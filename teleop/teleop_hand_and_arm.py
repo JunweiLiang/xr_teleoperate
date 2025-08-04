@@ -5,7 +5,8 @@ import cv2
 from multiprocessing import shared_memory, Value, Array, Lock
 import threading
 import logging_mp
-logging_mp.basic_config(level=logging_mp.INFO)
+#logging_mp.basic_config(level=logging_mp.INFO)
+logging_mp.basic_config(level=logging_mp.DEBUG)
 logger_mp = logging_mp.get_logger(__name__)
 
 import os 
@@ -321,7 +322,7 @@ if __name__ == '__main__':
                 # self.tvuer see televuer/televuer.py
 
                 # to test the following
-                (tv) junweil@office-precognition:~/projects/xr_teleoperate/teleop$ python teleop_hand_and_arm.py --xr-mode=controller  --arm=G1_29 --ee=inspire1 --sim
+                (tv) junweil@office-precognition:~/projects/test2/xr_teleoperate/teleop$ python teleop_hand_and_arm.py --xr-mode=controller  --arm=G1_29 --ee=inspire1 --sim --record
 
             """
             if args.xr_mode == "controller":
