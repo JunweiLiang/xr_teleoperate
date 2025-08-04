@@ -325,8 +325,7 @@ if __name__ == '__main__':
                 (tv) junweil@office-precognition:~/projects/test2/xr_teleoperate/teleop$ python teleop_hand_and_arm.py --xr-mode=controller  --arm=G1_29 --ee=inspire1 --sim --record
 
             """
-            #if args.xr_mode == "controller":
-            if False:
+            if args.xr_mode == "controller":
                 if tele_data.tele_state.right_aButton:
                     logger_mp.info("test: tele_state.right_aButton pressed")
                 if tele_data.tele_state.right_bButton:

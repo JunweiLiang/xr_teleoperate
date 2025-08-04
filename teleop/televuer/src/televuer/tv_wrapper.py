@@ -150,6 +150,7 @@ class TeleStateData:
 
     # controller tracking
     left_trigger_state: bool = False       # True if trigger is actively pressed
+    left_trigger_value: float = 0.0   # (0.0 ~ 1.0) trigger pull depth
     left_squeeze_ctrl_state: bool = False  # True if grip button is pressed
     left_squeeze_ctrl_value: float = 0.0   # (0.0 ~ 1.0) grip pull depth
     left_thumbstick_state: bool = False    # True if thumbstick button is pressed
@@ -157,6 +158,7 @@ class TeleStateData:
     left_aButton: bool = False             # True if A button is pressed
     left_bButton: bool = False             # True if B button is pressed
     right_trigger_state: bool = False      # True if trigger is actively pressed
+    right_trigger_value: float = 0.0   # (0.0 ~ 1.0) trigger pull depth
     right_squeeze_ctrl_state: bool = False # True if grip button is pressed
     right_squeeze_ctrl_value: float = 0.0  # (0.0 ~ 1.0) grip pull depth
     right_thumbstick_state: bool = False   # True if thumbstick button is pressed
@@ -383,7 +385,7 @@ class TeleVuerWrapper:
             if self.return_state_data:
                 controller_state = TeleStateData(
                     left_trigger_state=self.tvuer.left_controller_trigger_state,
-                    #left_trigger_value=self.tvuer.left_controller_trigger_value,
+                    left_trigger_value=self.tvuer.left_controller_trigger_value,
                     left_squeeze_ctrl_state=self.tvuer.left_controller_squeeze_state,
                     left_squeeze_ctrl_value=self.tvuer.left_controller_squeeze_value,
                     left_thumbstick_state=self.tvuer.left_controller_thumbstick_state,
@@ -391,7 +393,7 @@ class TeleVuerWrapper:
                     left_aButton=self.tvuer.left_controller_aButton,
                     left_bButton=self.tvuer.left_controller_bButton,
                     right_trigger_state=self.tvuer.right_controller_trigger_state,
-                    #right_trigger_value=self.tvuer.right_controller_trigger_value,
+                    right_trigger_value=self.tvuer.right_controller_trigger_value,
                     right_squeeze_ctrl_state=self.tvuer.right_controller_squeeze_state,
                     right_squeeze_ctrl_value=self.tvuer.right_controller_squeeze_value,
                     right_thumbstick_state=self.tvuer.right_controller_thumbstick_state,
