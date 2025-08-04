@@ -108,6 +108,7 @@ if __name__ == '__main__':
     else:
         tv_img_shape = (img_config['head_camera_image_shape'][0], img_config['head_camera_image_shape'][1], 3)
 
+    # 存储当前的RGB观测
     tv_img_shm = shared_memory.SharedMemory(create = True, size = np.prod(tv_img_shape) * np.uint8().itemsize)
     tv_img_array = np.ndarray(tv_img_shape, dtype = np.uint8, buffer = tv_img_shm.buf)
 
@@ -128,11 +129,13 @@ if __name__ == '__main__':
     else:
         img_client = ImageClient(tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name)
 
+    # 图片就存到tv_img里了
     image_receive_thread = threading.Thread(target = img_client.receive_process, daemon = True)
     image_receive_thread.daemon = True
     image_receive_thread.start()
 
     # television: obtain hand pose data from the XR device and transmit the robot's head camera image to the XR device.
+    # tv_img 传到VR里
     tv_wrapper = TeleVuerWrapper(binocular=BINOCULAR, use_hand_tracking=args.xr_mode == "hand", img_shape=tv_img_shape, img_shm_name=tv_img_shm.name, 
                                  return_state_data=True, return_hand_rot_data = False)
 
@@ -171,6 +174,7 @@ if __name__ == '__main__':
         dual_hand_data_lock = Lock()
         dual_hand_state_array = Array('d', 12, lock = False)   # [output] current left, right hand state(12) data.
         dual_hand_action_array = Array('d', 12, lock = False)  # [output] current left, right hand action(12) data.
+        # add a controller type to control hand
         hand_ctrl = Inspire_Controller(left_hand_pos_array, right_hand_pos_array, dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array, simulation_mode=args.sim)
     elif args.ee == "brainco":
         left_hand_pos_array = Array('d', 75, lock = True)      # [input]
@@ -190,6 +194,7 @@ if __name__ == '__main__':
         sim_state_subscriber = start_sim_state_subscribe()
 
     # controller + motion mode
+    # 这里应该没考虑sim的情况
     if args.xr_mode == "controller" and args.motion:
         from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
         sport_client = LocoClient()
@@ -206,7 +211,9 @@ if __name__ == '__main__':
         logger_mp.info("Please enter the start signal (enter 'r' to start the subsequent program)")
         while not start_signal:
             time.sleep(0.01)
+
         arm_ctrl.speed_gradual_max()
+
         while running:
             start_time = time.time()
 
@@ -223,6 +230,8 @@ if __name__ == '__main__':
                 elif key == ord('a'):
                     if args.sim:
                         publish_reset_category(2, reset_pose_publisher)
+
+            # headless模式已经有 listen_keyboard
 
             if args.record and should_toggle_recording:
                 should_toggle_recording = False
@@ -253,7 +262,39 @@ if __name__ == '__main__':
                         tele_state=hand_state
                     )
                 controller_tracking:
-                    controller_state = TeleStateData(
+
+            """
+            # 获得手姿态等数据,
+
+            tele_data = tv_wrapper.get_motion_state_data()
+
+            # 这个遥操作一开始就在跑了，最高100 Hz检查left_hand_pos_array, 这个是从OpenXR获取到的手
+            # 下面更新后，robot_hand_controller直接根据这些数据控制手了
+            if (args.ee == "dex3" or args.ee == "inspire1" or args.ee == "brainco") and args.xr_mode == "hand":
+                with left_hand_pos_array.get_lock():
+                    left_hand_pos_array[:] = tele_data.left_hand_pos.flatten()
+                with right_hand_pos_array.get_lock():
+                    right_hand_pos_array[:] = tele_data.right_hand_pos.flatten()
+
+            # TODO: use controller for dex3 and inspre1
+            elif args.ee == "dex1" and args.xr_mode == "controller":
+                with left_gripper_value.get_lock():
+                    left_gripper_value.value = tele_data.left_trigger_value
+                with right_gripper_value.get_lock():
+                    right_gripper_value.value = tele_data.right_trigger_value
+            elif args.ee == "dex1" and args.xr_mode == "hand":
+                with left_gripper_value.get_lock():
+                    left_gripper_value.value = tele_data.left_pinch_value
+                with right_gripper_value.get_lock():
+                    right_gripper_value.value = tele_data.right_pinch_value
+            else:
+                pass
+            # Inspire_Controller 以最高100 Hz，获取hand_pos_array，重定向出dual_hand_state_array
+
+            # junwei: 测试quest 3 controller的按键
+            # controller_state see televuer/tv_wrapper.py
+            """
+            controller_state = TeleStateData(
                         left_trigger_state=self.tvuer.left_controller_trigger_state,
                         left_squeeze_ctrl_state=self.tvuer.left_controller_squeeze_state,
                         left_squeeze_ctrl_value=self.tvuer.left_controller_squeeze_value,
@@ -277,31 +318,47 @@ if __name__ == '__main__':
                         right_trigger_value=10.0 - self.tvuer.right_controller_trigger_value * 10,
                         tele_state=controller_state
                     )
+                # self.tvuer see televuer/televuer.py
+
+                # to test the following
+                (tv) junweil@office-precognition:~/projects/xr_teleoperate/teleop$ python teleop_hand_and_arm.py --xr-mode=controller  --arm=G1_29 --ee=inspire1 --sim
+
             """
-            # 获得手姿态等数据
-            tele_data = tv_wrapper.get_motion_state_data()
+            if args.xr_mode == "controller":
+                if tele_data.tele_state.right_aButton:
+                    logger_mp.info("test: tele_state.right_aButton pressed")
+                if tele_data.tele_state.right_bButton:
+                    logger_mp.info("test: tele_state.right_bButton pressed")
 
-            if (args.ee == "dex3" or args.ee == "inspire1" or args.ee == "brainco") and args.xr_mode == "hand":
-                with left_hand_pos_array.get_lock():
-                    left_hand_pos_array[:] = tele_data.left_hand_pos.flatten()
-                with right_hand_pos_array.get_lock():
-                    right_hand_pos_array[:] = tele_data.right_hand_pos.flatten()
+                if tele_data.tele_state.left_aButton:
+                    logger_mp.info("test: tele_state.left_aButton pressed")
+                if tele_data.tele_state.left_bButton:
+                    logger_mp.info("test: tele_state.left_bButton pressed")
 
-            # TODO: use controller for dex3 and inspre1
-            elif args.ee == "dex1" and args.xr_mode == "controller":
-                with left_gripper_value.get_lock():
-                    left_gripper_value.value = tele_data.left_trigger_value
-                with right_gripper_value.get_lock():
-                    right_gripper_value.value = tele_data.right_trigger_value
-            elif args.ee == "dex1" and args.xr_mode == "hand":
-                with left_gripper_value.get_lock():
-                    left_gripper_value.value = tele_data.left_pinch_value
-                with right_gripper_value.get_lock():
-                    right_gripper_value.value = tele_data.right_pinch_value
-            else:
-                pass
-            # Inspire_Controller 以最高100 Hz，获取hand_pos_array，重定向出dual_hand_state_array
-            #
+                if tele_data.tele_state.left_trigger_state:
+                    logger_mp.info("test: tele_state.left_trigger_state pressed")
+                    logger_mp.info("test: tele_state.left_trigger_value %s" % tele_data.tele_state.left_trigger_value)
+                if tele_data.tele_state.right_trigger_state:
+                    logger_mp.info("test: tele_state.right_trigger_state pressed")
+                    logger_mp.info("test: tele_state.right_trigger_value %s" % tele_data.tele_state.right_trigger_value)
+
+                if tele_data.tele_state.left_squeeze_ctrl_state:
+                    logger_mp.info("test: tele_state.left_squeeze_ctrl_state pressed")
+                    logger_mp.info("test: tele_state.left_squeeze_ctrl_value %s" % tele_data.tele_state.left_squeeze_ctrl_value)
+                if tele_data.tele_state.right_squeeze_ctrl_state:
+                    logger_mp.info("test: tele_state.right_squeeze_ctrl_state pressed")
+                    logger_mp.info("test: tele_state.right_squeeze_ctrl_value %s" % tele_data.tele_state.right_squeeze_ctrl_value)
+
+
+                if tele_data.tele_state.left_thumbstick_state:
+                    logger_mp.info("test: tele_state.left_thumbstick_state pressed")
+                    logger_mp.info("test: tele_state.left_thumbstick_value %s" % tele_data.tele_state.left_thumbstick_value)
+                if tele_data.tele_state.right_thumbstick_state:
+                    logger_mp.info("test: tele_state.right_thumbstick_state pressed")
+                    logger_mp.info("test: tele_state.right_thumbstick_value %s" % tele_data.tele_state.right_thumbstick_value)
+
+
+
             
             # high level control
             if args.xr_mode == "controller" and args.motion:
