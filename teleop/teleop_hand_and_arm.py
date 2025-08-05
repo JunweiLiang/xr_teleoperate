@@ -333,28 +333,26 @@ if __name__ == '__main__':
             """
             if args.debug_controller:
                 assert args.xr_mode == "controller"
-                if tele_data.tele_state.right_aButton:
-                    logger_mp.info("test: tele_state.right_aButton pressed")
+                #if tele_data.tele_state.right_aButton:
+                #    logger_mp.info("test: tele_state.right_aButton pressed")
                 if tele_data.tele_state.right_bButton:
                     logger_mp.info("test: tele_state.right_bButton pressed")
 
-                if tele_data.tele_state.left_aButton:
-                    logger_mp.info("test: tele_state.left_aButton pressed")
+                #if tele_data.tele_state.left_aButton:
+                #    logger_mp.info("test: tele_state.left_aButton pressed")
                 if tele_data.tele_state.left_bButton:
                     logger_mp.info("test: tele_state.left_bButton pressed")
 
-                if tele_data.tele_state.left_trigger_state:
-                    logger_mp.info("test: tele_state.left_trigger_state pressed")
-                    logger_mp.info("test: tele_state.left_trigger_value %s" % tele_data.tele_state.left_trigger_value)
-                if tele_data.tele_state.right_trigger_state:
-                    logger_mp.info("test: tele_state.right_trigger_state pressed")
-                    logger_mp.info("test: tele_state.right_trigger_value %s" % tele_data.tele_state.right_trigger_value)
-
-                if tele_data.tele_state.left_squeeze_ctrl_state:
-                    logger_mp.info("test: tele_state.left_squeeze_ctrl_state pressed")
+                # trigger_state 需要完全按下才会触发成True一段时间
+                # 所以trigger_value应该一直有数据，我们同时按下一个按钮去测试
+                #if tele_data.tele_state.left_trigger_state:
+                    #logger_mp.info("test: tele_state.left_trigger_state pressed")
+                if tele_data.tele_state.left_aButton:
+                    logger_mp.info("test: with aButton pressed. tele_state.left_trigger_value %s" % tele_data.tele_state.left_trigger_value)
                     logger_mp.info("test: tele_state.left_squeeze_ctrl_value %s" % tele_data.tele_state.left_squeeze_ctrl_value)
-                if tele_data.tele_state.right_squeeze_ctrl_state:
-                    logger_mp.info("test: tele_state.right_squeeze_ctrl_state pressed")
+
+                if tele_data.tele_state.right_aButton:
+                    logger_mp.info("test: with aButton pressed. tele_state.right_trigger_value %s" % tele_data.tele_state.right_trigger_value)
                     logger_mp.info("test: tele_state.right_squeeze_ctrl_value %s" % tele_data.tele_state.right_squeeze_ctrl_value)
 
 
@@ -363,14 +361,6 @@ if __name__ == '__main__':
 
                 if tele_data.tele_state.right_thumbstick_state:
                     logger_mp.info("test: tele_state.right_thumbstick_state pressed")
-
-
-                # thumbstick应该一直有值，按下trigger建的时候再显示
-                if tele_data.tele_state.right_trigger_state:
-                    logger_mp.info("test: tele_state.right_thumbstick_value %s" % tele_data.tele_state.right_thumbstick_value)
-
-                if tele_data.tele_state.left_trigger_state:
-                    logger_mp.info("test: tele_state.left_thumbstick_value %s" % tele_data.tele_state.left_thumbstick_value)
 
 
             
