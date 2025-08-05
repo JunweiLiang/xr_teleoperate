@@ -360,11 +360,17 @@ if __name__ == '__main__':
 
                 if tele_data.tele_state.left_thumbstick_state:
                     logger_mp.info("test: tele_state.left_thumbstick_state pressed")
-                    logger_mp.info("test: tele_state.left_thumbstick_value %s" % tele_data.tele_state.left_thumbstick_value)
+
                 if tele_data.tele_state.right_thumbstick_state:
                     logger_mp.info("test: tele_state.right_thumbstick_state pressed")
+
+
+                # thumbstick应该一直有值，按下trigger建的时候再显示
+                if tele_data.tele_state.right_trigger_state:
                     logger_mp.info("test: tele_state.right_thumbstick_value %s" % tele_data.tele_state.right_thumbstick_value)
 
+                if tele_data.tele_state.left_trigger_state:
+                    logger_mp.info("test: tele_state.left_thumbstick_value %s" % tele_data.tele_state.left_thumbstick_value)
 
 
             
