@@ -68,6 +68,9 @@ if __name__ == '__main__':
     parser.add_argument('--headless', action='store_true', help='Enable headless mode (no display)')
     parser.add_argument('--sim', action = 'store_true', help = 'Enable isaac simulation mode')
 
+
+    parser.add_argument('--debug_controller', action = 'store_true', help = 'check out controller')
+
     args = parser.parse_args()
     logger_mp.info(f"args: {args}")
 
@@ -322,10 +325,14 @@ if __name__ == '__main__':
                 # self.tvuer see televuer/televuer.py
 
                 # to test the following
-                (tv) junweil@office-precognition:~/projects/test2/xr_teleoperate/teleop$ python teleop_hand_and_arm.py --xr-mode=controller  --arm=G1_29 --ee=inspire1 --sim --record
+                    # 需要更新teleop 包裹，修改了tv_wrapper.py加入了trigger_value，原先只有trigger_state
+                        (tv) junweil@office-precognition:~/projects/test2/xr_teleoperate/teleop/televuer$ pip install -e .
+
+                    (tv) junweil@office-precognition:~/projects/test2/xr_teleoperate/teleop$ python teleop_hand_and_arm.py --xr-mode=controller  --arm=G1_29 --ee=inspire1 --sim --debug_controller
 
             """
-            if args.xr_mode == "controller":
+            if args.debug_controller:
+                assert args.xr_mode == "controller"
                 if tele_data.tele_state.right_aButton:
                     logger_mp.info("test: tele_state.right_aButton pressed")
                 if tele_data.tele_state.right_bButton:
