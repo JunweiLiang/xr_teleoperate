@@ -379,7 +379,7 @@ class TeleVuerWrapper:
             left_IPunitree_Brobot_waist_arm[2, 3] +=0.45 # z
             right_IPunitree_Brobot_waist_arm[2,3] +=0.45
             # left_IPunitree_Brobot_waist_arm[1, 3] +=0.02 # y
-            # right_IPunitree_Brobot_waist_arm[1,3] +=0.02
+            # right_IPunitree_Brobot_waist_arm[1, 3] +=0.02
 
             # return data
             if self.return_state_data:

@@ -178,8 +178,14 @@ if __name__ == '__main__':
         dual_hand_data_lock = Lock()
         dual_hand_state_array = Array('d', 12, lock = False)   # [output] current left, right hand state(12) data.
         dual_hand_action_array = Array('d', 12, lock = False)  # [output] current left, right hand action(12) data.
-        # add a controller type to control hand
-        hand_ctrl = Inspire_Controller(left_hand_pos_array, right_hand_pos_array, dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array, simulation_mode=args.sim)
+        if args.xr_mode == "hand":
+            # add a controller type to control hand
+            hand_ctrl = Inspire_Controller(left_hand_pos_array, right_hand_pos_array, dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array, simulation_mode=args.sim)
+        else:
+            # We use gripper to control hand
+            left_gripper_value = Value('d', 0.0, lock=True)        # [input]
+            right_gripper_value = Value('d', 0.0, lock=True)       # [input]
+            hand_ctrl = Inspire_Gripper_Controller(left_gripper_value, right_gripper_value, dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array, simulation_mode=args.sim)
     elif args.ee == "brainco":
         left_hand_pos_array = Array('d', 75, lock = True)      # [input]
         right_hand_pos_array = Array('d', 75, lock = True)     # [input]
@@ -281,6 +287,11 @@ if __name__ == '__main__':
                     right_hand_pos_array[:] = tele_data.right_hand_pos.flatten()
 
             # TODO: use controller for dex3 and inspre1
+        elif args.ee == "inspire1" and args.xr_mode == "controller":
+                with left_gripper_value.get_lock():
+                    left_gripper_value.value = tele_data.left_trigger_value
+                with right_gripper_value.get_lock():
+                    right_gripper_value.value = tele_data.right_trigger_value
             elif args.ee == "dex1" and args.xr_mode == "controller":
                 with left_gripper_value.get_lock():
                     left_gripper_value.value = tele_data.left_trigger_value
@@ -332,6 +343,18 @@ if __name__ == '__main__':
 
             """
             if args.debug_controller:
+                # for Quest 3
+                # button都是 True/False
+                # right_aButton, right_bButton
+                # left_aButton (对应左手柄X), left_bButton (对应左手柄Y)
+
+                # trigger_state 需要完全按下才会触发成True一段时间
+                # trigger_value 0 -> 1之间，完全按下是1.0,
+                # squeeze_ctrl_value 类似
+
+                # thumbstick_state 需要整个遥杆按下才True
+                # thumbstick_value 零位[0., 0.,]， 值为-1.0 到1.0, 就是xy的相对值
+
                 assert args.xr_mode == "controller"
                 #if tele_data.tele_state.right_aButton:
                 #    logger_mp.info("test: tele_state.right_aButton pressed")
@@ -355,12 +378,13 @@ if __name__ == '__main__':
                     logger_mp.info("test: with aButton pressed. tele_state.right_trigger_value %s" % tele_data.tele_state.right_trigger_value)
                     logger_mp.info("test: tele_state.right_squeeze_ctrl_value %s" % tele_data.tele_state.right_squeeze_ctrl_value)
 
-
                 if tele_data.tele_state.left_thumbstick_state:
                     logger_mp.info("test: tele_state.left_thumbstick_state pressed")
+                    logger_mp.info("test: tele_state.left_thumbstick_value %s" % tele_data.tele_state.left_thumbstick_value)
 
                 if tele_data.tele_state.right_thumbstick_state:
                     logger_mp.info("test: tele_state.right_thumbstick_state pressed")
+                    logger_mp.info("test: tele_state.right_thumbstick_value %s" % tele_data.tele_state.right_thumbstick_value)
 
 
             

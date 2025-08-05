@@ -122,7 +122,16 @@ class Inspire_Controller:
                     # retarget() from teleop/robot_control/dex-retargeting/src/dex_retargeting/retargeting_config.py -> build(), also see seq_retarget.py
                     # retarget() function的时候返回robot_qpos
                     # self.hand_retargeting.left_dex_retargeting_to_hardware -> [5, 4, 3, 2, 1, 0]
-                    # 所以这个q_target，长度是6，顺序就是 self.left_inspire_api_joint_names from hand_retargeting.py
+                    # 所以这个q_target，长度是6，顺序就是 self.left_inspire_api_joint_names from teleop/robot_control/hand_retargeting.py
+                    """
+                    self.left_inspire_api_joint_names  = [
+                        'L_pinky_proximal_joint',
+                        'L_ring_proximal_joint',
+                        'L_middle_proximal_joint',
+                        'L_index_proximal_joint',
+                        'L_thumb_proximal_pitch_joint',
+                        'L_thumb_proximal_yaw_joint' ]
+                    """
                     left_q_target  = self.hand_retargeting.left_retargeting.retarget(ref_left_value)[self.hand_retargeting.left_dex_retargeting_to_hardware]
                     right_q_target = self.hand_retargeting.right_retargeting.retarget(ref_right_value)[self.hand_retargeting.right_dex_retargeting_to_hardware]
 
@@ -163,7 +172,7 @@ class Inspire_Controller:
             logger_mp.info("Inspire_Controller has been closed.")
 
 class Inspire_Gripper_Controller:
-    def __init__(self, left_hand_array, right_hand_array, dual_hand_data_lock = None, dual_hand_state_array = None,
+    def __init__(self, left_gripper_value_in, right_gripper_value_in, dual_hand_data_lock = None, dual_hand_state_array = None,
                        dual_hand_action_array = None, fps = 100.0, Unit_Test = False, simulation_mode = False):
         logger_mp.info("Initialize Inspire_Controller...")
         self.fps = fps
@@ -198,8 +207,13 @@ class Inspire_Gripper_Controller:
             logger_mp.warning("[Inspire_Controller] Waiting to subscribe dds...")
         logger_mp.info("[Inspire_Controller] Subscribe dds ok.")
 
-        hand_control_process = Process(target=self.control_process, args=(left_hand_array, right_hand_array,  self.left_hand_state_array, self.right_hand_state_array,
-                                                                          dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array))
+        # 以下thread就会从一开始获取OpenXR数据，控制手，并且存下手的state和action
+        hand_control_process = Process(
+            target=self.control_process,
+            args=(
+                left_gripper_value_in, right_gripper_value_in,
+                self.left_hand_state_array, self.right_hand_state_array,
+                dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array))
         hand_control_process.daemon = True
         hand_control_process.start()
 
@@ -227,13 +241,12 @@ class Inspire_Gripper_Controller:
         self.HandCmb_publisher.Write(self.hand_msg)
         # logger_mp.debug("hand ctrl publish ok.")
 
-    def control_process(self, left_hand_array, right_hand_array, left_hand_state_array, right_hand_state_array,
+    def control_process(self, left_gripper_value_in, right_gripper_value_in, left_hand_state_array, right_hand_state_array,
                               dual_hand_data_lock = None, dual_hand_state_array = None, dual_hand_action_array = None):
         self.running = True
         # 这个遥操作一开始就在跑了，最高100 Hz检查left_hand_pos_array, 这个是从OpenXR获取到的手
 
-        left_q_target  = np.full(Inspire_Num_Motors, 1.0)
-        right_q_target = np.full(Inspire_Num_Motors, 1.0)
+
 
         # initialize inspire hand's cmd msg
         self.hand_msg  = MotorCmds_()
@@ -244,29 +257,67 @@ class Inspire_Gripper_Controller:
         for idx, id in enumerate(Inspire_Right_Hand_JointIndex):
             self.hand_msg.cmds[id].q = 1.0
 
+        # 构建手全打开的初始状态
+        left_q_target  = np.full(Inspire_Num_Motors, 0.0) # (6,)
+        # 顺序
+        """
+            self.left_inspire_api_joint_names  = [
+                'L_pinky_proximal_joint',
+                'L_ring_proximal_joint',
+                'L_middle_proximal_joint',
+                'L_index_proximal_joint',
+                'L_thumb_proximal_pitch_joint',
+                'L_thumb_proximal_yaw_joint' ]
+        """
+        right_q_target = np.full(Inspire_Num_Motors, 0.0)
+
+        # 以下都是根据URDF中定义的弧度
+        # 定义 gripper 全打开状态，拇指对齐食指方向：
+            # L_thumb_proximal_yaw_joint: 1.3
+            # R_thumb_proximal_yaw_joint: 1.3
+            # 如[图](./g1_inspire_open.png)
+        # so
+        THUMB_YAW = 1.3  # 打开，关闭，手拇指的yaw都不变，保持和食指对齐
+        left_q_target[5] = THUMB_YAW
+        right_q_target[5] = THUMB_YAW
+
+        # 定义 gripper 全关闭状态，以下设置了主动关节，留有些空间，实机为连杆结构，应该拇指尖和食指尖接触：
+            # R_thumb_proximal_yaw_joint: 1.3
+            # R_thumb_proximal_pitch_joint: 0.6
+            # R_index_proximal_joint: 0.756
+            # R_middle_proximal_joint: 0.756
+            # R_ring_proximal_joint: 0.756
+            # R_pinky_proximal_joint: 0.756
+            # L的数值也是一样的
+            # 如[图](./g1_inspire_close.png)
+
+        CLOSE_THUMB_PITCH = 0.6 # open is 0.0
+        CLOSE_OTHER_JOINT = 0.756 # open is 0.0
+
         try:
             while self.running:
                 start_time = time.time()
-                # get dual hand state
-                with left_hand_array.get_lock():
-                    left_hand_data  = np.array(left_hand_array[:]).reshape(25, 3).copy()
-                with right_hand_array.get_lock():
-                    right_hand_data = np.array(right_hand_array[:]).reshape(25, 3).copy()
+                # get dual gripper controller state
+
+                # get dual trigger command from XR device
+                with left_gripper_value_in.get_lock():
+                    left_gripper_value  = left_gripper_value_in.value
+                with right_gripper_value_in.get_lock():
+                    right_gripper_value = right_gripper_value_in.value
+
+                # in the following, we map the gripper value [0.0, 1.0] to the hand action
 
                 # Read left and right q_state from shared arrays
                 state_data = np.concatenate((np.array(left_hand_state_array[:]), np.array(right_hand_state_array[:])))
 
-                if not np.all(right_hand_data == 0.0) and not np.all(left_hand_data[4] == np.array([-1.13, 0.3, 0.15])): # if hand data has been initialized.
-                    # # left_indices (2, 15)? # assets/inspire_hand/inspire_hand.xml -> target_link_human_indices_dexpilot
-                    ref_left_value = left_hand_data[self.hand_retargeting.left_indices[1,:]] - left_hand_data[self.hand_retargeting.left_indices[0,:]]
-                    ref_right_value = right_hand_data[self.hand_retargeting.right_indices[1,:]] - right_hand_data[self.hand_retargeting.right_indices[0,:]]
+                if left_gripper_value != 0.0 or right_gripper_value != 0.0: # if input data has been initialized.
+                    # Linear mapping from [0, 1.0] to hand action
 
-                    # retarget() from teleop/robot_control/dex-retargeting/src/dex_retargeting/retargeting_config.py -> build(), also see seq_retarget.py
-                    # retarget() function的时候返回robot_qpos
-                    # self.hand_retargeting.left_dex_retargeting_to_hardware -> [5, 4, 3, 2, 1, 0]
-                    # 所以这个q_target，长度是6，顺序就是 self.left_inspire_api_joint_names from hand_retargeting.py
-                    left_q_target  = self.hand_retargeting.left_retargeting.retarget(ref_left_value)[self.hand_retargeting.left_dex_retargeting_to_hardware]
-                    right_q_target = self.hand_retargeting.right_retargeting.retarget(ref_right_value)[self.hand_retargeting.right_dex_retargeting_to_hardware]
+                    left_q_target[4] = np.interp(left_gripper_value, [0.0, 1.0], [0.0, CLOSE_THUMB_PITCH])
+                    left_q_target[:4] = np.interp(left_gripper_value, [0.0, 1.0], [0.0, CLOSE_OTHER_JOINT])
+
+                    right_q_target[4] = np.interp(right_gripper_value, [0.0, 1.0], [0.0, CLOSE_THUMB_PITCH])
+                    right_q_target[:4] = np.interp(right_gripper_value, [0.0, 1.0], [0.0, CLOSE_OTHER_JOINT])
 
                     # In website https://support.unitree.com/home/en/G1_developer/inspire_dfx_dexterous_hand, you can find
                     #     In the official document, the angles are in the range [0, 1] ==> 0.0: fully closed  1.0: fully open
