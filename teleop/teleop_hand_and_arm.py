@@ -287,7 +287,7 @@ if __name__ == '__main__':
                     right_hand_pos_array[:] = tele_data.right_hand_pos.flatten()
 
             # TODO: use controller for dex3 and inspre1
-        elif args.ee == "inspire1" and args.xr_mode == "controller":
+            elif args.ee == "inspire1" and args.xr_mode == "controller":
                 with left_gripper_value.get_lock():
                     left_gripper_value.value = tele_data.left_trigger_value
                 with right_gripper_value.get_lock():
