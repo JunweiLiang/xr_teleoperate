@@ -229,6 +229,7 @@ if __name__ == '__main__':
                     start_signal = True
                     logger_mp.info("Program start signal received from controller.")
             time.sleep(0.01)
+        last_trigger_time = None # 用于controller的触发记时，因为按下按钮，会持续一段时间True
 
         arm_ctrl.speed_gradual_max()
 
@@ -327,8 +328,18 @@ if __name__ == '__main__':
                 # 右手，A按钮相当于键盘s
                 if tele_data.tele_state.left_aButton:
                     # junwei: 这个可能在按下按钮之后触发多次，因为会维持True一段时间
-                    should_toggle_recording = True
-                    logger_mp.info("Program record toggle signal received from controller.")
+                    # temporary fix, 两次触发要隔一段时间
+                    ignore_this = False
+                    if last_trigger_time:
+                        this_trigger_time = time.time()
+                        if this_trigger_time - last_trigger_time <= 2.0:
+                            ignore_this = True
+
+                    if not ignore_this:
+                        should_toggle_recording = True
+                        logger_mp.info("Program record toggle signal received from controller.")
+                        last_trigger_time = time.time()
+
 
             # junwei: 测试quest 3 controller的按键
             # controller_state see televuer/tv_wrapper.py
