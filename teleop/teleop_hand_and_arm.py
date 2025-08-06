@@ -278,6 +278,22 @@ if __name__ == '__main__':
 
             tele_data = tv_wrapper.get_motion_state_data()
 
+            # 可以用controller 控制开始，录制数据， 结束
+            if args.xr_mode == "controller":
+                # 右手，A按钮相当于键盘q
+                if tele_data.tele_state.right_aButton:
+                    running = False
+                    stop_listening()
+                    logger_mp.info("Program stop signal received from controller.")
+                # 右手，B按钮相当于键盘r
+                elif tele_data.tele_state.right_bButton:
+                    start_signal = True
+                    logger_mp.info("Program start signal received from controller.")
+                # 右手，A按钮相当于键盘s
+                elif tele_data.tele_state.left_aButton:
+                    should_toggle_recording = True
+
+
             # 这个遥操作一开始就在跑了，最高100 Hz检查left_hand_pos_array, 这个是从OpenXR获取到的手
             # 下面更新后，robot_hand_controller直接根据这些数据控制手了
             if (args.ee == "dex3" or args.ee == "inspire1" or args.ee == "brainco") and args.xr_mode == "hand":
@@ -386,11 +402,10 @@ if __name__ == '__main__':
                     logger_mp.info("test: tele_state.right_thumbstick_state pressed")
                     logger_mp.info("test: tele_state.right_thumbstick_value %s" % tele_data.tele_state.right_thumbstick_value)
 
-
             
             # high level control
             if args.xr_mode == "controller" and args.motion:
-                # quit teleoperate
+                # quit teleoperate?
                 if tele_data.tele_state.right_aButton:
                     running = False
                     stop_listening()

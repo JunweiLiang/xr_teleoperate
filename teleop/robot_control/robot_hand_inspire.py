@@ -142,17 +142,24 @@ class Inspire_Controller:
                     #     - idx 4:   0~0.5
                     #     - idx 5:  -0.1~1.3
                     # We normalize them using (max - value) / range
+                    # so this will reverse the 0.0 fully open to fully close
                     def normalize(val, min_val, max_val):
                         return np.clip((max_val - val) / (max_val - min_val), 0.0, 1.0)
 
+                    # 把原本 URDF joint的关节目标角度，转化成[0, 1], 这个才能输出给因时的API? 而且1.0是开手，URDF是0.0才是开手
                     for idx in range(Inspire_Num_Motors):
                         if idx <= 3:
+                            # pinky_proximal_joint, limits: [0.000, 1.700]
                             left_q_target[idx]  = normalize(left_q_target[idx], 0.0, 1.7)
                             right_q_target[idx] = normalize(right_q_target[idx], 0.0, 1.7)
-                        elif idx == 4:
+
+                        #joint id: 41, name: R_thumb_proximal_yaw_joint, limits: [-0.100, 1.300]
+                        #joint id: 42, name: R_thumb_proximal_pitch_joint, limits: [-0.100, 0.600]
+                        elif idx == 4: # 'L_thumb_proximal_pitch_joint',
                             left_q_target[idx]  = normalize(left_q_target[idx], 0.0, 0.5)
                             right_q_target[idx] = normalize(right_q_target[idx], 0.0, 0.5)
-                        elif idx == 5:
+
+                        elif idx == 5: # 'L_thumb_proximal_yaw_joint'
                             left_q_target[idx]  = normalize(left_q_target[idx], -0.1, 1.3)
                             right_q_target[idx] = normalize(right_q_target[idx], -0.1, 1.3)
 
@@ -258,7 +265,7 @@ class Inspire_Gripper_Controller:
             self.hand_msg.cmds[id].q = 1.0
 
         # 构建手全打开的初始状态
-        left_q_target  = np.full(Inspire_Num_Motors, 0.0) # (6,)
+        left_q_target  = np.full(Inspire_Num_Motors, 1.0) # (6,)
         # 顺序
         """
             self.left_inspire_api_joint_names  = [
@@ -269,17 +276,17 @@ class Inspire_Gripper_Controller:
                 'L_thumb_proximal_pitch_joint',
                 'L_thumb_proximal_yaw_joint' ]
         """
-        right_q_target = np.full(Inspire_Num_Motors, 0.0)
+        right_q_target = np.full(Inspire_Num_Motors, 1.0)
 
-        # 以下都是根据URDF中定义的弧度
+        # 注意，以上的q值，是inspire API定义的，0.0是关闭，1.0是打开
+
+        # 以下都是根据URDF中定义的弧度， 0.0是打开
         # 定义 gripper 全打开状态，拇指对齐食指方向：
             # L_thumb_proximal_yaw_joint: 1.3
             # R_thumb_proximal_yaw_joint: 1.3
             # 如[图](./g1_inspire_open.png)
         # so
         THUMB_YAW = 1.3  # 打开，关闭，手拇指的yaw都不变，保持和食指对齐
-        left_q_target[5] = THUMB_YAW
-        right_q_target[5] = THUMB_YAW
 
         # 定义 gripper 全关闭状态，以下设置了主动关节，留有些空间，实机为连杆结构，应该拇指尖和食指尖接触：
             # R_thumb_proximal_yaw_joint: 1.3
@@ -310,14 +317,16 @@ class Inspire_Gripper_Controller:
                 # Read left and right q_state from shared arrays
                 state_data = np.concatenate((np.array(left_hand_state_array[:]), np.array(right_hand_state_array[:])))
 
+
                 if left_gripper_value != 0.0 or right_gripper_value != 0.0: # if input data has been initialized.
-                    # Linear mapping from [0, 1.0] to hand action
+                    # Linear mapping from [0, 1.0] to hand action range
 
                     left_q_target[4] = np.interp(left_gripper_value, [0.0, 1.0], [0.0, CLOSE_THUMB_PITCH])
                     left_q_target[:4] = np.interp(left_gripper_value, [0.0, 1.0], [0.0, CLOSE_OTHER_JOINT])
 
                     right_q_target[4] = np.interp(right_gripper_value, [0.0, 1.0], [0.0, CLOSE_THUMB_PITCH])
                     right_q_target[:4] = np.interp(right_gripper_value, [0.0, 1.0], [0.0, CLOSE_OTHER_JOINT])
+
 
                     # In website https://support.unitree.com/home/en/G1_developer/inspire_dfx_dexterous_hand, you can find
                     #     In the official document, the angles are in the range [0, 1] ==> 0.0: fully closed  1.0: fully open
@@ -326,19 +335,30 @@ class Inspire_Gripper_Controller:
                     #     - idx 4:   0~0.5
                     #     - idx 5:  -0.1~1.3
                     # We normalize them using (max - value) / range
+                    # so this will reverse the 0.0 fully open to fully close
                     def normalize(val, min_val, max_val):
                         return np.clip((max_val - val) / (max_val - min_val), 0.0, 1.0)
 
+                    # 把原本 URDF joint的关节目标角度，转化成[0, 1], 这个才能输出给因时的API? 而且1.0是开手，URDF是0.0才是开手
                     for idx in range(Inspire_Num_Motors):
                         if idx <= 3:
+                            # pinky_proximal_joint, limits: [0.000, 1.700]
                             left_q_target[idx]  = normalize(left_q_target[idx], 0.0, 1.7)
                             right_q_target[idx] = normalize(right_q_target[idx], 0.0, 1.7)
-                        elif idx == 4:
-                            left_q_target[idx]  = normalize(left_q_target[idx], 0.0, 0.5)
-                            right_q_target[idx] = normalize(right_q_target[idx], 0.0, 0.5)
-                        elif idx == 5:
-                            left_q_target[idx]  = normalize(left_q_target[idx], -0.1, 1.3)
-                            right_q_target[idx] = normalize(right_q_target[idx], -0.1, 1.3)
+
+                        #joint id: 41, name: R_thumb_proximal_yaw_joint, limits: [-0.100, 1.300]
+                        #joint id: 42, name: R_thumb_proximal_pitch_joint, limits: [-0.100, 0.600]
+                        elif idx == 4: # 'L_thumb_proximal_pitch_joint',
+                            left_q_target[idx]  = normalize(left_q_target[idx], 0.0, 0.6)
+                            right_q_target[idx] = normalize(right_q_target[idx], 0.0, 0.6)
+
+
+                # 无论手打开关闭，拇指保持和食指对齐
+                # 'L_thumb_proximal_yaw_joint'
+                left_q_target[5] = THUMB_YAW
+                right_q_target[5] = THUMB_YAW
+                left_q_target[5]  = normalize(left_q_target[idx], -0.1, 1.3)
+                right_q_target[5] = normalize(right_q_target[idx], -0.1, 1.3)
 
                 # get dual hand action
                 action_data = np.concatenate((left_q_target, right_q_target))
