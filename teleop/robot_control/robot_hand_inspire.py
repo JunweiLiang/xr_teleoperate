@@ -296,7 +296,7 @@ class Inspire_Gripper_Controller:
 
         # 定义 gripper 全关闭状态，以下设置了主动关节，留有些空间，实机为连杆结构，应该拇指尖和食指尖接触：
             # R_thumb_proximal_yaw_joint: 1.3
-            # R_thumb_proximal_pitch_joint: 0.6
+            # R_thumb_proximal_pitch_joint: 0.5
             # R_index_proximal_joint: 0.756
             # R_middle_proximal_joint: 0.756
             # R_ring_proximal_joint: 0.756
@@ -304,7 +304,7 @@ class Inspire_Gripper_Controller:
             # L的数值也是一样的
             # 如[图](./g1_inspire_close.png)
 
-        CLOSE_THUMB_PITCH = 0.6 # open is 0.0
+        CLOSE_THUMB_PITCH = 0.5 # open is 0.0
         CLOSE_OTHER_JOINT = 0.756 # open is 0.0
 
         try:
@@ -353,16 +353,16 @@ class Inspire_Gripper_Controller:
                         #joint id: 41, name: R_thumb_proximal_yaw_joint, limits: [-0.100, 1.300]
                         #joint id: 42, name: R_thumb_proximal_pitch_joint, limits: [-0.100, 0.600]
                         elif idx == 4: # 'L_thumb_proximal_pitch_joint',
-                            left_q_target[idx]  = self.normalize(left_q_target[idx], 0.0, 0.6)
-                            right_q_target[idx] = self.normalize(right_q_target[idx], 0.0, 0.6)
+                            left_q_target[idx]  = self.normalize(left_q_target[idx], 0.0, 0.5)
+                            right_q_target[idx] = self.normalize(right_q_target[idx], 0.0, 0.5)
 
 
                 # 无论手打开关闭，拇指保持和食指对齐
                 # 'L_thumb_proximal_yaw_joint'
                 left_q_target[5] = THUMB_YAW
                 right_q_target[5] = THUMB_YAW
-                left_q_target[5]  = self.normalize(left_q_target[idx], -0.1, 1.3)
-                right_q_target[5] = self.normalize(right_q_target[idx], -0.1, 1.3)
+                left_q_target[5]  = self.normalize(left_q_target[5], -0.1, 1.3)
+                right_q_target[5] = self.normalize(right_q_target[5], -0.1, 1.3)
 
                 # get dual hand action
                 action_data = np.concatenate((left_q_target, right_q_target))
