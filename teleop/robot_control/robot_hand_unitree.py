@@ -441,6 +441,7 @@ class Dex3_1_Gripper_Controller:
 
                 # get dual hand action
                 action_data = np.concatenate((left_q_target, right_q_target))
+                logger_mp.debug("action data: %s" % action_data)
                 if dual_hand_state_array_out and dual_hand_action_array_out:
                     with dual_hand_data_lock:
                         dual_hand_state_array_out[:] = state_data
@@ -452,7 +453,7 @@ class Dex3_1_Gripper_Controller:
                 sleep_time = max(0, (1 / self.fps) - time_elapsed)
                 time.sleep(sleep_time)
         finally:
-            logger_mp.info("Dex3_1_Controller has been closed.")
+            logger_mp.info("Dex3_1_Gripper_Controller has been closed.")
 
 
 class Dex3_1_Left_JointIndex(IntEnum):
