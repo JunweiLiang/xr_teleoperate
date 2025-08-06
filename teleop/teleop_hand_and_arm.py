@@ -340,10 +340,6 @@ if __name__ == '__main__':
             else:
                 pass
 
-
-
-
-
             # junwei: 测试quest 3 controller的按键
             # controller_state see televuer/tv_wrapper.py
             """
