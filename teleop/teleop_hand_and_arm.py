@@ -5,8 +5,8 @@ import cv2
 from multiprocessing import shared_memory, Value, Array, Lock
 import threading
 import logging_mp
-logging_mp.basic_config(level=logging_mp.INFO)
-#logging_mp.basic_config(level=logging_mp.DEBUG)
+#logging_mp.basic_config(level=logging_mp.INFO)
+logging_mp.basic_config(level=logging_mp.DEBUG)
 logger_mp = logging_mp.get_logger(__name__)
 
 import os 
