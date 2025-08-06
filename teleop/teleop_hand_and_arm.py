@@ -296,12 +296,12 @@ if __name__ == '__main__':
             # TODO: use controller for dex3 and inspre1
             elif args.ee == "inspire1" and args.xr_mode == "controller":
                 with left_gripper_value.get_lock():
-                    left_gripper_value.value = tele_data.left_trigger_value
+                    left_gripper_value.value = tele_data.tele_state.left_trigger_value
                 with right_gripper_value.get_lock():
-                    right_gripper_value.value = tele_data.right_trigger_value
+                    right_gripper_value.value = tele_data.tele_state.right_trigger_value
             elif args.ee == "dex1" and args.xr_mode == "controller":
                 with left_gripper_value.get_lock():
-                    left_gripper_value.value = tele_data.left_trigger_value
+                    left_gripper_value.value = tele_data.left_trigger_value # 这个宇树放缩到10.0 -> 0.0了
                 with right_gripper_value.get_lock():
                     right_gripper_value.value = tele_data.right_trigger_value
             elif args.ee == "dex1" and args.xr_mode == "hand":

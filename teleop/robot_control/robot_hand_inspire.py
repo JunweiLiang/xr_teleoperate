@@ -319,7 +319,6 @@ class Inspire_Gripper_Controller:
                     left_gripper_value  = left_gripper_value_in.value
                 with right_gripper_value_in.get_lock():
                     right_gripper_value = right_gripper_value_in.value
-                logger_mp.info("right gripper value: %s" % right_gripper_value)
                 # in the following, we map the gripper value [0.0, 1.0] to the hand action
 
                 # Read left and right q_state from shared arrays
@@ -367,12 +366,7 @@ class Inspire_Gripper_Controller:
 
                 # get dual hand action
                 action_data = np.concatenate((left_q_target, right_q_target))
-                logger_mp.info("action data: %s" % action_data)
-                """
-                0.55529 0.55529 0.55529   0.55529 0.      0.
-                 0.55529 0.55529 0.55529   0.55529 0.      0.
-                1.      1.  1.      1.      1.      0.
-                """
+
                 if dual_hand_state_array and dual_hand_action_array:
                     with dual_hand_data_lock:
                         dual_hand_state_array[:] = state_data
