@@ -441,7 +441,7 @@ class Dex3_1_Gripper_Controller:
 
                 # get dual hand action
                 action_data = np.concatenate((left_q_target, right_q_target))
-                logger_mp.debug("action data: %s" % action_data)
+                logger_mp.info("action data: %s" % action_data)
                 if dual_hand_state_array_out and dual_hand_action_array_out:
                     with dual_hand_data_lock:
                         dual_hand_state_array_out[:] = state_data
