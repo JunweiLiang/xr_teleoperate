@@ -248,6 +248,11 @@ class Inspire_Gripper_Controller:
         self.HandCmb_publisher.Write(self.hand_msg)
         # logger_mp.debug("hand ctrl publish ok.")
 
+     # We normalize them using (max - value) / range
+    # so this will reverse the 0.0 fully open to fully close
+    def normalize(self, val, min_val, max_val):
+        return np.clip((max_val - val) / (max_val - min_val), 0.0, 1.0)
+
     def control_process(self, left_gripper_value_in, right_gripper_value_in, left_hand_state_array, right_hand_state_array,
                               dual_hand_data_lock = None, dual_hand_state_array = None, dual_hand_action_array = None):
         self.running = True
@@ -334,31 +339,28 @@ class Inspire_Gripper_Controller:
                     #     - idx 0~3: 0~1.7 (1.7 = closed)
                     #     - idx 4:   0~0.5
                     #     - idx 5:  -0.1~1.3
-                    # We normalize them using (max - value) / range
-                    # so this will reverse the 0.0 fully open to fully close
-                    def normalize(val, min_val, max_val):
-                        return np.clip((max_val - val) / (max_val - min_val), 0.0, 1.0)
+
 
                     # 把原本 URDF joint的关节目标角度，转化成[0, 1], 这个才能输出给因时的API? 而且1.0是开手，URDF是0.0才是开手
                     for idx in range(Inspire_Num_Motors):
                         if idx <= 3:
                             # pinky_proximal_joint, limits: [0.000, 1.700]
-                            left_q_target[idx]  = normalize(left_q_target[idx], 0.0, 1.7)
-                            right_q_target[idx] = normalize(right_q_target[idx], 0.0, 1.7)
+                            left_q_target[idx]  = self.normalize(left_q_target[idx], 0.0, 1.7)
+                            right_q_target[idx] = self.normalize(right_q_target[idx], 0.0, 1.7)
 
                         #joint id: 41, name: R_thumb_proximal_yaw_joint, limits: [-0.100, 1.300]
                         #joint id: 42, name: R_thumb_proximal_pitch_joint, limits: [-0.100, 0.600]
                         elif idx == 4: # 'L_thumb_proximal_pitch_joint',
-                            left_q_target[idx]  = normalize(left_q_target[idx], 0.0, 0.6)
-                            right_q_target[idx] = normalize(right_q_target[idx], 0.0, 0.6)
+                            left_q_target[idx]  = self.normalize(left_q_target[idx], 0.0, 0.6)
+                            right_q_target[idx] = self.normalize(right_q_target[idx], 0.0, 0.6)
 
 
                 # 无论手打开关闭，拇指保持和食指对齐
                 # 'L_thumb_proximal_yaw_joint'
                 left_q_target[5] = THUMB_YAW
                 right_q_target[5] = THUMB_YAW
-                left_q_target[5]  = normalize(left_q_target[idx], -0.1, 1.3)
-                right_q_target[5] = normalize(right_q_target[idx], -0.1, 1.3)
+                left_q_target[5]  = self.normalize(left_q_target[idx], -0.1, 1.3)
+                right_q_target[5] = self.normalize(right_q_target[idx], -0.1, 1.3)
 
                 # get dual hand action
                 action_data = np.concatenate((left_q_target, right_q_target))
