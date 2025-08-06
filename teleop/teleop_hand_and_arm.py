@@ -5,8 +5,8 @@ import cv2
 from multiprocessing import shared_memory, Value, Array, Lock
 import threading
 import logging_mp
-#logging_mp.basic_config(level=logging_mp.INFO)
-logging_mp.basic_config(level=logging_mp.DEBUG)
+logging_mp.basic_config(level=logging_mp.INFO)
+#logging_mp.basic_config(level=logging_mp.DEBUG)
 logger_mp = logging_mp.get_logger(__name__)
 
 import os 
@@ -201,7 +201,7 @@ if __name__ == '__main__':
         reset_pose_publisher = ChannelPublisher("rt/reset_pose/cmd", String_)
         reset_pose_publisher.Init()
         from teleop.utils.sim_state_topic import start_sim_state_subscribe
-        sim_state_subscriber = start_sim_state_subscribe()
+        sim_state_subscriber = start_sim_state_subscribe(shm_size=4096) # 默认3096 老是报warning
 
     # controller + motion mode
     # 这里应该没考虑sim的情况
