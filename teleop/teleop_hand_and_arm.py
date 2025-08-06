@@ -282,7 +282,24 @@ if __name__ == '__main__':
                 controller_tracking:
 
             """
+            # Inspire_Controller 以最高100 Hz，获取hand_pos_array，重定向出dual_hand_state_array
+            # 获得手姿态等数据,
 
+            tele_data = tv_wrapper.get_motion_state_data()
+            # 可以用controller 控制开始，录制数据， 结束
+            if args.xr_mode == "controller":
+                # 右手，A按钮相当于键盘q
+                if tele_data.tele_state.right_aButton:
+                    running = False
+                    stop_listening()
+                    logger_mp.info("Program stop signal received from controller.")
+
+                # 右手，A按钮相当于键盘s
+                if tele_data.tele_state.left_aButton:
+                    # junwei: 这个可能在按下按钮之后触发多次，因为会维持True一段时间
+
+                    should_toggle_recording = True
+                    logger_mp.info("Program record toggle signal received from controller.")
 
 
             # 这个遥操作一开始就在跑了，最高100 Hz检查left_hand_pos_array, 这个是从OpenXR获取到的手
@@ -311,25 +328,9 @@ if __name__ == '__main__':
                     right_gripper_value.value = tele_data.right_pinch_value
             else:
                 pass
-            # Inspire_Controller 以最高100 Hz，获取hand_pos_array，重定向出dual_hand_state_array
-            # 获得手姿态等数据,
 
-            tele_data = tv_wrapper.get_motion_state_data()
 
-            # 可以用controller 控制开始，录制数据， 结束
-            if args.xr_mode == "controller":
-                # 右手，A按钮相当于键盘q
-                if tele_data.tele_state.right_aButton:
-                    running = False
-                    stop_listening()
-                    logger_mp.info("Program stop signal received from controller.")
 
-                # 右手，A按钮相当于键盘s
-                if tele_data.tele_state.left_aButton:
-                    # junwei: 这个可能在按下按钮之后触发多次，因为会维持True一段时间
-
-                    should_toggle_recording = True
-                    logger_mp.info("Program record toggle signal received from controller.")
 
 
             # junwei: 测试quest 3 controller的按键
