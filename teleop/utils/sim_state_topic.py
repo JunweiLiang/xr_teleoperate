@@ -59,7 +59,7 @@ class SharedMemoryManager:
                 json_bytes = json_str.encode('utf-8')
                 
                 if len(json_bytes) > self.size - 8:  # reserve 8 bytes for length and timestamp
-                    #logger_mp.warning(f"Data too large for shared memory ({len(json_bytes)} > {self.size - 8})")
+                    logger_mp.warning(f"Data too large for shared memory ({len(json_bytes)} > {self.size - 8})")
                     return False
                 
                 # write timestamp (4 bytes) and data length (4 bytes)

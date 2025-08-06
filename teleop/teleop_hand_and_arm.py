@@ -327,6 +327,7 @@ if __name__ == '__main__':
                 # 右手，A按钮相当于键盘s
                 if tele_data.tele_state.left_aButton:
                     should_toggle_recording = True
+                    logger_mp.info("Program record toggle signal received from controller.")
 
             # junwei: 测试quest 3 controller的按键
             # controller_state see televuer/tv_wrapper.py
