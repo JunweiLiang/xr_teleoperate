@@ -210,6 +210,251 @@ class Dex3_1_Controller:
         finally:
             logger_mp.info("Dex3_1_Controller has been closed.")
 
+class Dex3_1_Gripper_Controller:
+    def __init__(self, left_gripper_value_in, right_gripper_value_in, dual_hand_data_lock = None, dual_hand_state_array_out = None,
+                       dual_hand_action_array_out = None, fps = 100.0, Unit_Test = False, simulation_mode = False):
+        """
+        [note] A *_array type parameter requires using a multiprocessing Array, because it needs to be passed to the internal child process
+
+        left_hand_array_in: [input] Left hand skeleton data (required from XR device) to hand_ctrl.control_process
+
+        right_hand_array_in: [input] Right hand skeleton data (required from XR device) to hand_ctrl.control_process
+
+        dual_hand_data_lock: Data synchronization lock for dual_hand_state_array and dual_hand_action_array
+
+        dual_hand_state_array_out: [output] Return left(7), right(7) hand motor state
+
+        dual_hand_action_array_out: [output] Return left(7), right(7) hand motor action
+
+        fps: Control frequency
+
+        Unit_Test: Whether to enable unit testing
+
+        simulation_mode: Whether to use simulation mode (default is False, which means using real robot)
+        """
+        logger_mp.info("Initialize Dex3_1_Controller...")
+
+        self.fps = fps
+        self.Unit_Test = Unit_Test
+        self.simulation_mode = simulation_mode
+
+        if self.simulation_mode:
+            ChannelFactoryInitialize(1)
+        else:
+            ChannelFactoryInitialize(0)
+
+        # initialize handcmd publisher and handstate subscriber
+        self.LeftHandCmb_publisher = ChannelPublisher(kTopicDex3LeftCommand, HandCmd_)
+        self.LeftHandCmb_publisher.Init()
+        self.RightHandCmb_publisher = ChannelPublisher(kTopicDex3RightCommand, HandCmd_)
+        self.RightHandCmb_publisher.Init()
+
+        self.LeftHandState_subscriber = ChannelSubscriber(kTopicDex3LeftState, HandState_)
+        self.LeftHandState_subscriber.Init()
+        self.RightHandState_subscriber = ChannelSubscriber(kTopicDex3RightState, HandState_)
+        self.RightHandState_subscriber.Init()
+
+        # Shared Arrays for hand states
+        self.left_hand_state_array  = Array('d', Dex3_Num_Motors, lock=True)
+        self.right_hand_state_array = Array('d', Dex3_Num_Motors, lock=True)
+
+        # initialize subscribe thread
+        self.subscribe_state_thread = threading.Thread(target=self._subscribe_hand_state)
+        self.subscribe_state_thread.daemon = True
+        self.subscribe_state_thread.start()
+
+        while True:
+            if any(self.left_hand_state_array) and any(self.right_hand_state_array):
+                break
+            time.sleep(0.01)
+            logger_mp.warning("[Dex3_1_Controller] Waiting to subscribe dds...")
+        logger_mp.info("[Dex3_1_Controller] Subscribe dds ok.")
+
+        hand_control_process = Process(
+            target=self.control_process,
+            args=(
+                left_gripper_value_in, right_gripper_value_in,
+                self.left_hand_state_array, self.right_hand_state_array,
+                dual_hand_data_lock, dual_hand_state_array_out, dual_hand_action_array_out))
+        hand_control_process.daemon = True
+        hand_control_process.start()
+
+        logger_mp.info("Initialize Dex3_1_Controller OK!\n")
+
+    def _subscribe_hand_state(self):
+        while True:
+            left_hand_msg  = self.LeftHandState_subscriber.Read()
+            right_hand_msg = self.RightHandState_subscriber.Read()
+            if left_hand_msg is not None and right_hand_msg is not None:
+                # Update left hand state
+                for idx, id in enumerate(Dex3_1_Left_JointIndex):
+                    self.left_hand_state_array[idx] = left_hand_msg.motor_state[id].q
+                # Update right hand state
+                for idx, id in enumerate(Dex3_1_Right_JointIndex):
+                    self.right_hand_state_array[idx] = right_hand_msg.motor_state[id].q
+            time.sleep(0.002)
+
+    class _RIS_Mode:
+        def __init__(self, id=0, status=0x01, timeout=0):
+            self.motor_mode = 0
+            self.id = id & 0x0F  # 4 bits for id
+            self.status = status & 0x07  # 3 bits for status
+            self.timeout = timeout & 0x01  # 1 bit for timeout
+
+        def _mode_to_uint8(self):
+            self.motor_mode |= (self.id & 0x0F)
+            self.motor_mode |= (self.status & 0x07) << 4
+            self.motor_mode |= (self.timeout & 0x01) << 7
+            return self.motor_mode
+
+    def ctrl_dual_hand(self, left_q_target, right_q_target):
+        """set current left, right hand motor state target q"""
+        for idx, id in enumerate(Dex3_1_Left_JointIndex):
+            self.left_msg.motor_cmd[id].q = left_q_target[idx]
+        for idx, id in enumerate(Dex3_1_Right_JointIndex):
+            self.right_msg.motor_cmd[id].q = right_q_target[idx]
+
+        self.LeftHandCmb_publisher.Write(self.left_msg)
+        self.RightHandCmb_publisher.Write(self.right_msg)
+        # logger_mp.debug("hand ctrl publish ok.")
+
+    def control_process(self, left_gripper_value_in, right_gripper_value_in, left_hand_state_array, right_hand_state_array,
+                              dual_hand_data_lock = None, dual_hand_state_array_out = None, dual_hand_action_array_out = None):
+        self.running = True
+
+
+
+        q = 0.0
+        dq = 0.0
+        tau = 0.0
+        kp = 1.5
+        kd = 0.2
+
+        # initialize dex3-1's left hand cmd msg
+        self.left_msg  = unitree_hg_msg_dds__HandCmd_()
+        for id in Dex3_1_Left_JointIndex:
+            ris_mode = self._RIS_Mode(id = id, status = 0x01)
+            motor_mode = ris_mode._mode_to_uint8()
+            self.left_msg.motor_cmd[id].mode = motor_mode
+            self.left_msg.motor_cmd[id].q    = q
+            self.left_msg.motor_cmd[id].dq   = dq
+            self.left_msg.motor_cmd[id].tau  = tau
+            self.left_msg.motor_cmd[id].kp   = kp
+            self.left_msg.motor_cmd[id].kd   = kd
+
+        # initialize dex3-1's right hand cmd msg
+        self.right_msg = unitree_hg_msg_dds__HandCmd_()
+        for id in Dex3_1_Right_JointIndex:
+            ris_mode = self._RIS_Mode(id = id, status = 0x01)
+            motor_mode = ris_mode._mode_to_uint8()
+            self.right_msg.motor_cmd[id].mode = motor_mode
+            self.right_msg.motor_cmd[id].q    = q
+            self.right_msg.motor_cmd[id].dq   = dq
+            self.right_msg.motor_cmd[id].tau  = tau
+            self.right_msg.motor_cmd[id].kp   = kp
+            self.right_msg.motor_cmd[id].kd   = kd
+
+        # 7 个自由度
+        #left_q_target  = np.full(Dex3_Num_Motors, 0)
+        #right_q_target = np.full(Dex3_Num_Motors, 0)
+        # 顺序
+        """
+        # teleop/robot_control/hand_retargeting.py
+        self.left_dex3_api_joint_names  = [
+            'left_hand_thumb_0_joint',
+            'left_hand_thumb_1_joint',
+            'left_hand_thumb_2_joint',
+            'left_hand_middle_0_joint',
+            'left_hand_middle_1_joint',
+            'left_hand_index_0_joint',
+            'left_hand_index_1_joint' ]
+        """
+        # 关节角度全是0的情况下，拇指对其另外两指的空隙，90度角打开，
+        # 定义 gripper 全打开状态，让拇指微微弯曲，：
+            # right_hand_thumb_1_joint: -0.507
+            # right_hand_thumb_2_joint: -0.628
+            # left_hand_thumb_1_joint: 0.507
+            # left_hand_thumb_2_joint: 0.628
+        THUMB_1_OPEN = 0.507
+        THUMB_2_OPEN = 0.628
+        # 定义 gripper 全关闭状态, 拇指和两指 指尖在一个平面上:
+            # left_hand_thumb_1_joint: 0.888
+            # left_hand_thumb_2_joint: 0.628
+            # left_hand_middle_0_joint: -0.707
+            # left_hand_middle_1_joint: -0.768
+            # left_hand_index_0_joint: -0.707
+            # left_hand_index_1_joint: -0.768
+            # right_hand_thumb_1_joint: -0.888
+            # right_hand_thumb_2_joint: -0.628
+            # right_hand_middle_0_joint: 0.707
+            # right_hand_middle_1_joint: 0.768
+            # right_hand_index_0_joint: 0.707
+            # right_hand_index_1_joint: 0.768
+        THUMB_1_CLOSE = 0.888
+        THUMB_2_CLOSE = 0.628
+        MIDDLE_0_CLOSE = 0.707
+        MIDDLE_1_CLOSE = 0.768
+        INDEX_0_CLOSE = 0.707
+        INDEX_1_CLOSE = 0.768
+        try:
+            while self.running:
+                start_time = time.time()
+
+                # 构建全打开的初始状态为默认
+                left_q_target  = np.full(Dex3_Num_Motors, 0)
+                right_q_target = np.full(Dex3_Num_Motors, 0)
+                left_q_target[1] = THUMB_1_OPEN
+                left_q_target[2] = THUMB_2_OPEN
+                right_q_target[1] = -THUMB_1_OPEN
+                right_q_target[2] = -THUMB_2_OPEN
+
+                # get dual trigger command from XR device
+                with left_gripper_value_in.get_lock():
+                    left_gripper_value  = left_gripper_value_in.value
+                with right_gripper_value_in.get_lock():
+                    right_gripper_value = right_gripper_value_in.value
+                # in the following, we map the gripper value [0.0, 1.0] to the hand action
+
+                # Read left and right q_state from shared arrays
+                state_data = np.concatenate((np.array(left_hand_state_array[:]), np.array(right_hand_state_array[:])))
+
+                if left_gripper_value != 0.0 or right_gripper_value != 0.0: # if input data has been initialized.
+                    # 'left_hand_thumb_1_joint',
+                    left_q_target[1] = np.interp(left_gripper_value, [0.0, 1.0], [THUMB_1_OPEN, THUMB_1_CLOSE])
+                    # 'left_hand_thumb_2_joint',
+                    left_q_target[2] = np.interp(left_gripper_value, [0.0, 1.0], [THUMB_2_OPEN, THUMB_2_CLOSE])
+                    # 'left_hand_middle_0_joint',
+                    left_q_target[3] = np.interp(left_gripper_value, [0.0, 1.0], [0.0, -MIDDLE_0_CLOSE])
+                    left_q_target[4] = np.interp(left_gripper_value, [0.0, 1.0], [0.0, -MIDDLE_1_CLOSE])
+                    left_q_target[5] = np.interp(left_gripper_value, [0.0, 1.0], [0.0, -INDEX_0_CLOSE])
+                    left_q_target[6] = np.interp(left_gripper_value, [0.0, 1.0], [0.0, -INDEX_1_CLOSE])
+
+                    # 'right_hand_thumb_1_joint',
+                    right_q_target[1] = np.interp(right_gripper_value, [0.0, 1.0], [-THUMB_1_OPEN, -THUMB_1_CLOSE])
+                    # 'right_hand_thumb_2_joint',
+                    right_q_target[2] = np.interp(right_gripper_value, [0.0, 1.0], [-THUMB_2_OPEN, -THUMB_2_CLOSE])
+                    # 'right_hand_middle_0_joint',
+                    right_q_target[3] = np.interp(right_gripper_value, [0.0, 1.0], [0.0, MIDDLE_0_CLOSE])
+                    right_q_target[4] = np.interp(right_gripper_value, [0.0, 1.0], [0.0, MIDDLE_1_CLOSE])
+                    right_q_target[5] = np.interp(right_gripper_value, [0.0, 1.0], [0.0, INDEX_0_CLOSE])
+                    right_q_target[6] = np.interp(right_gripper_value, [0.0, 1.0], [0.0, INDEX_1_CLOSE])
+
+                # get dual hand action
+                action_data = np.concatenate((left_q_target, right_q_target))
+                if dual_hand_state_array_out and dual_hand_action_array_out:
+                    with dual_hand_data_lock:
+                        dual_hand_state_array_out[:] = state_data
+                        dual_hand_action_array_out[:] = action_data
+
+                self.ctrl_dual_hand(left_q_target, right_q_target)
+                current_time = time.time()
+                time_elapsed = current_time - start_time
+                sleep_time = max(0, (1 / self.fps) - time_elapsed)
+                time.sleep(sleep_time)
+        finally:
+            logger_mp.info("Dex3_1_Controller has been closed.")
+
+
 class Dex3_1_Left_JointIndex(IntEnum):
     kLeftHandThumb0 = 0
     kLeftHandThumb1 = 1

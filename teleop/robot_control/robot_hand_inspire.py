@@ -273,7 +273,7 @@ class Inspire_Gripper_Controller:
         #left_q_target  = np.full(Inspire_Num_Motors, 1.0) # (6,)
         #right_q_target = np.full(Inspire_Num_Motors, 1.0)
         # 顺序
-        """
+        """# teleop/robot_control/hand_retargeting.py
             self.left_inspire_api_joint_names  = [
                 'L_pinky_proximal_joint',
                 'L_ring_proximal_joint',

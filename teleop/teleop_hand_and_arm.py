@@ -5,8 +5,8 @@ import cv2
 from multiprocessing import shared_memory, Value, Array, Lock
 import threading
 import logging_mp
-#logging_mp.basic_config(level=logging_mp.INFO)
-logging_mp.basic_config(level=logging_mp.DEBUG)
+logging_mp.basic_config(level=logging_mp.INFO)
+#logging_mp.basic_config(level=logging_mp.DEBUG)
 logger_mp = logging_mp.get_logger(__name__)
 
 import os 
@@ -18,7 +18,7 @@ sys.path.append(parent_dir)
 from televuer import TeleVuerWrapper
 from teleop.robot_control.robot_arm import G1_29_ArmController, G1_23_ArmController, H1_2_ArmController, H1_ArmController
 from teleop.robot_control.robot_arm_ik import G1_29_ArmIK, G1_23_ArmIK, H1_2_ArmIK, H1_ArmIK
-from teleop.robot_control.robot_hand_unitree import Dex3_1_Controller, Dex1_1_Gripper_Controller
+from teleop.robot_control.robot_hand_unitree import Dex3_1_Controller, Dex3_1_Gripper_Controller, Dex1_1_Gripper_Controller
 from teleop.robot_control.robot_hand_inspire import Inspire_Controller, Inspire_Gripper_Controller
 from teleop.robot_control.robot_hand_brainco import Brainco_Controller
 from teleop.image_server.image_client import ImageClient
@@ -164,7 +164,13 @@ if __name__ == '__main__':
         dual_hand_data_lock = Lock()
         dual_hand_state_array = Array('d', 14, lock = False)   # [output] current left, right hand state(14) data.
         dual_hand_action_array = Array('d', 14, lock = False)  # [output] current left, right hand action(14) data.
-        hand_ctrl = Dex3_1_Controller(left_hand_pos_array, right_hand_pos_array, dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array, simulation_mode=args.sim)
+        if args.xr_mode == "hand":
+            hand_ctrl = Dex3_1_Controller(left_hand_pos_array, right_hand_pos_array, dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array, simulation_mode=args.sim)
+        else:
+            # We use gripper to control hand
+            left_gripper_value = Value('d', 0.0, lock=True)        # [input]
+            right_gripper_value = Value('d', 0.0, lock=True)       # [input]
+            hand_ctrl = Dex3_1_Gripper_Controller(left_gripper_value, right_gripper_value, dual_hand_data_lock, dual_hand_state_array, dual_hand_action_array, simulation_mode=args.sim)
     elif args.ee == "dex1":
         left_gripper_value = Value('d', 0.0, lock=True)        # [input]
         right_gripper_value = Value('d', 0.0, lock=True)       # [input]
@@ -310,8 +316,13 @@ if __name__ == '__main__':
                 with right_hand_pos_array.get_lock():
                     right_hand_pos_array[:] = tele_data.right_hand_pos.flatten()
 
-            # TODO: use controller for dex3 and inspre1
+            # junwei: use controller for dex3 and inspre1
             elif args.ee == "inspire1" and args.xr_mode == "controller":
+                with left_gripper_value.get_lock():
+                    left_gripper_value.value = tele_data.tele_state.left_trigger_value
+                with right_gripper_value.get_lock():
+                    right_gripper_value.value = tele_data.tele_state.right_trigger_value
+            elif args.ee == "dex3" and args.xr_mode == "controller":
                 with left_gripper_value.get_lock():
                     left_gripper_value.value = tele_data.tele_state.left_trigger_value
                 with right_gripper_value.get_lock():
@@ -485,6 +496,14 @@ if __name__ == '__main__':
                         right_ee_state = dual_hand_state_array[-6:]
                         left_hand_action = dual_hand_action_array[:6]
                         right_hand_action = dual_hand_action_array[-6:]
+                        current_body_state = []
+                        current_body_action = []
+                elif args.ee == "dex3" and args.xr_mode == "controller":
+                    with dual_hand_data_lock:
+                        left_ee_state = dual_hand_state_array[:7]
+                        right_ee_state = dual_hand_state_array[-7:]
+                        left_hand_action = dual_hand_action_array[:7]
+                        right_hand_action = dual_hand_action_array[-7:]
                         current_body_state = []
                         current_body_action = []
                 else:
