@@ -364,6 +364,7 @@ class Inspire_Gripper_Controller:
 
                 # get dual hand action
                 action_data = np.concatenate((left_q_target, right_q_target))
+                logger_mp.info("action data: %s" % action_data)
                 if dual_hand_state_array and dual_hand_action_array:
                     with dual_hand_data_lock:
                         dual_hand_state_array[:] = state_data
@@ -375,7 +376,7 @@ class Inspire_Gripper_Controller:
                 sleep_time = max(0, (1 / self.fps) - time_elapsed)
                 time.sleep(sleep_time)
         finally:
-            logger_mp.info("Inspire_Controller has been closed.")
+            logger_mp.info("Inspire_Gripper_Controller has been closed.")
 
 
 # Update hand state, according to the official documentation, https://support.unitree.com/home/en/G1_developer/inspire_dfx_dexterous_hand

@@ -286,11 +286,11 @@ if __name__ == '__main__':
                     stop_listening()
                     logger_mp.info("Program stop signal received from controller.")
                 # 右手，B按钮相当于键盘r
-                elif tele_data.tele_state.right_bButton:
+                if tele_data.tele_state.right_bButton:
                     start_signal = True
                     logger_mp.info("Program start signal received from controller.")
                 # 右手，A按钮相当于键盘s
-                elif tele_data.tele_state.left_aButton:
+                if tele_data.tele_state.left_aButton:
                     should_toggle_recording = True
 
 
