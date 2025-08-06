@@ -232,7 +232,7 @@ class Dex3_1_Gripper_Controller:
 
         simulation_mode: Whether to use simulation mode (default is False, which means using real robot)
         """
-        logger_mp.info("Initialize Dex3_1_Controller...")
+        logger_mp.info("Initialize Dex3_1_Gripper_Controller...")
 
         self.fps = fps
         self.Unit_Test = Unit_Test
@@ -414,7 +414,7 @@ class Dex3_1_Gripper_Controller:
                 with right_gripper_value_in.get_lock():
                     right_gripper_value = right_gripper_value_in.value
                 # in the following, we map the gripper value [0.0, 1.0] to the hand action
-
+                logger_mp.info("left right gripper value: %s, %s" % (left_gripper_value, right_gripper_value))
                 # Read left and right q_state from shared arrays
                 state_data = np.concatenate((np.array(left_hand_state_array[:]), np.array(right_hand_state_array[:])))
 
