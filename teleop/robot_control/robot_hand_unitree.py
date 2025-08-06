@@ -143,8 +143,8 @@ class Dex3_1_Controller:
                               dual_hand_data_lock = None, dual_hand_state_array_out = None, dual_hand_action_array_out = None):
         self.running = True
 
-        left_q_target  = np.full(Dex3_Num_Motors, 0)
-        right_q_target = np.full(Dex3_Num_Motors, 0)
+        left_q_target  = np.full(Dex3_Num_Motors, 0.)
+        right_q_target = np.full(Dex3_Num_Motors, 0.)
 
         q = 0.0
         dq = 0.0
@@ -401,8 +401,8 @@ class Dex3_1_Gripper_Controller:
                 start_time = time.time()
 
                 # 构建全打开的初始状态为默认
-                left_q_target  = np.full(Dex3_Num_Motors, 0)
-                right_q_target = np.full(Dex3_Num_Motors, 0)
+                left_q_target  = np.full(Dex3_Num_Motors, 0.)
+                right_q_target = np.full(Dex3_Num_Motors, 0.)
                 left_q_target[1] = THUMB_1_OPEN
                 left_q_target[2] = THUMB_2_OPEN
                 right_q_target[1] = -THUMB_1_OPEN
@@ -414,7 +414,7 @@ class Dex3_1_Gripper_Controller:
                 with right_gripper_value_in.get_lock():
                     right_gripper_value = right_gripper_value_in.value
                 # in the following, we map the gripper value [0.0, 1.0] to the hand action
-                logger_mp.info("left right gripper value: %s, %s" % (left_gripper_value, right_gripper_value))
+                #logger_mp.info("left right gripper value: %s, %s" % (left_gripper_value, right_gripper_value))
                 # Read left and right q_state from shared arrays
                 state_data = np.concatenate((np.array(left_hand_state_array[:]), np.array(right_hand_state_array[:])))
 
