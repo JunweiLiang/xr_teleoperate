@@ -270,7 +270,8 @@ class Inspire_Gripper_Controller:
             self.hand_msg.cmds[id].q = 1.0
 
         # 构建手全打开的初始状态
-        left_q_target  = np.full(Inspire_Num_Motors, 1.0) # (6,)
+        #left_q_target  = np.full(Inspire_Num_Motors, 1.0) # (6,)
+        #right_q_target = np.full(Inspire_Num_Motors, 1.0)
         # 顺序
         """
             self.left_inspire_api_joint_names  = [
@@ -281,7 +282,7 @@ class Inspire_Gripper_Controller:
                 'L_thumb_proximal_pitch_joint',
                 'L_thumb_proximal_yaw_joint' ]
         """
-        right_q_target = np.full(Inspire_Num_Motors, 1.0)
+
 
         # 注意，以上的q值，是inspire API定义的，0.0是关闭，1.0是打开
 
@@ -309,7 +310,9 @@ class Inspire_Gripper_Controller:
         try:
             while self.running:
                 start_time = time.time()
-                # get dual gripper controller state
+                # 构建手全打开的初始状态作为默认
+                left_q_target  = np.full(Inspire_Num_Motors, 1.0) # (6,)
+                right_q_target = np.full(Inspire_Num_Motors, 1.0)
 
                 # get dual trigger command from XR device
                 with left_gripper_value_in.get_lock():
@@ -365,6 +368,11 @@ class Inspire_Gripper_Controller:
                 # get dual hand action
                 action_data = np.concatenate((left_q_target, right_q_target))
                 logger_mp.info("action data: %s" % action_data)
+                """
+                0.55529 0.55529 0.55529   0.55529 0.      0.
+                 0.55529 0.55529 0.55529   0.55529 0.      0.
+                1.      1.  1.      1.      1.      0.
+                """
                 if dual_hand_state_array and dual_hand_action_array:
                     with dual_hand_data_lock:
                         dual_hand_state_array[:] = state_data
