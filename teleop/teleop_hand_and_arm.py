@@ -326,6 +326,7 @@ if __name__ == '__main__':
 
                 # 右手，A按钮相当于键盘s
                 if tele_data.tele_state.left_aButton:
+                    # junwei: 这个可能在按下按钮之后触发多次，因为会维持True一段时间
                     should_toggle_recording = True
                     logger_mp.info("Program record toggle signal received from controller.")
 
@@ -467,6 +468,15 @@ if __name__ == '__main__':
                                                -tele_data.tele_state.left_thumbstick_value[0]  * 0.3,
                                                -tele_data.tele_state.right_thumbstick_value[0] * 0.3]
                 elif (args.ee == "inspire1" or args.ee == "brainco") and args.xr_mode == "hand":
+                    with dual_hand_data_lock:
+                        left_ee_state = dual_hand_state_array[:6]
+                        right_ee_state = dual_hand_state_array[-6:]
+                        left_hand_action = dual_hand_action_array[:6]
+                        right_hand_action = dual_hand_action_array[-6:]
+                        current_body_state = []
+                        current_body_action = []
+                # junwei: added using controller for inspire hand
+                elif args.ee == "inspire1" and args.xr_mode == "controller":
                     with dual_hand_data_lock:
                         left_ee_state = dual_hand_state_array[:6]
                         right_ee_state = dual_hand_state_array[-6:]
